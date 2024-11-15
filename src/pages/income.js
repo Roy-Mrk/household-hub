@@ -1,14 +1,27 @@
-// 1. pages/income.js - Income Entry Page
 import React, { useState } from 'react';
 
 export default function Income() {
   const [amount, setAmount] = useState('');
   const [source, setSource] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async function(e) {
     e.preventDefault();
     console.log(`Income Source: ${source}, Amount: ${amount}`);
-    // TODO: Implement logic to save the income data, e.g., API call
+    try {
+      const response = await fetch('/api/income', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ source, amount }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save income data');
+      }
+      console.log('Income data saved successfully');
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
   return (
