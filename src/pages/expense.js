@@ -1,14 +1,26 @@
-// 2. pages/expense.js - Expense Entry Page
 import React, { useState } from 'react';
 
 export default function Expense() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(`Expense Category: ${category}, Amount: ${amount}`);
-    // TODO: Implement logic to save the expense data, e.g., API call
+    try {
+      const response = await fetch('/api/expense', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ category, amount }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save expense data');
+      }
+      console.log('Expense data saved successfully');
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
   return (
