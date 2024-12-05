@@ -3,7 +3,6 @@ import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 export default async function handler(req, res) {
     if (req.method === 'POST') {
       const { category, amount } = req.body;
-
     // Data validation
     if (!category || !amount) {
       return res.status(400).json({ error: '支出の内容と金額が必要です' });
