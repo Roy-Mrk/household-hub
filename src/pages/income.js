@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function Income() {
   const [amount, setAmount] = useState('');
   const [source, setSource] = useState('');
-
+  const [incomes, setIncomes] = useState([]);
+  // データ取得
+  const fetchIncomes = async () => {
+    const { data, error } = await supabase
+      .from('income')
+      .select('*');
+    if (error) {
+      console.error('Error fetching incomes:', error);
+    } else {
+      setIncomes(data);
+    }
+  };
+  useEffect(() => {
+    fetchIncomes();
+  }, []);
   const handleSubmit = async function(e) {
     e.preventDefault();
-    console.log(`Income Source: ${source}, Amount: ${amount}`);
     try {
       const response = await fetch('/api/income', {
         method: 'POST',
@@ -19,6 +33,10 @@ export default function Income() {
         throw new Error('Failed to save income data');
       }
       console.log('Income data saved successfully');
+      setAmount('');
+      setSource('');
+      // Re-fetch income data to update the list
+      fetchIncomes();
     } catch (error) {
       console.error('Error:', error);
     }
@@ -48,6 +66,16 @@ export default function Income() {
           保存
         </button>
       </form>
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">収入履歴</h2>
+        <ul className="list-disc pl-5">
+          {incomes.map((income) => (
+            <li key={income.id}>
+              {income.source}: {income.amount}円 （入力日時: {new Date(income.created_at).toLocaleString()}）
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
