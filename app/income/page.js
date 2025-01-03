@@ -6,6 +6,7 @@ export default function Income() {
   const [amount, setAmount] = useState('');
   const [source, setSource] = useState('');
   const [incomes, setIncomes] = useState([]);
+  const [filter, setFilter] = useState(''); // フィルタ用の状態を追加
 
   // データ取得
   const fetchIncomes = async () => {
@@ -27,7 +28,7 @@ export default function Income() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/income', {
+      const response = await fetch('api/income', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,9 +48,13 @@ export default function Income() {
     }
   };
 
+  // フィルタリングされた収入データ
+  const filteredIncomes = incomes.filter(income =>
+    income.source.toLowerCase().includes(filter.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
-
       <h1 className="text-2xl font-bold mb-4">収入の入力</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-sm">
@@ -78,17 +83,27 @@ export default function Income() {
       <div className="mt-8">
         <h2 className="text-xl font-bold mb-4">収入履歴</h2>
 
-        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {incomes.map((income) => (
+        <input
+          type="text"
+          placeholder="フィルタ"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="p-2 border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400 mb-4"
+        />
+
+        <ul className="space-y-2">
+          {filteredIncomes.map((income) => (
             <li
               key={income.id}
-              className="bg-gray-800 shadow-md rounded p-4 hover:shadow-lg transition-shadow"
+              className="bg-gray-800 shadow-md rounded p-4 hover:shadow-lg transition-shadow flex justify-between items-center"
             >
-              <h3 className="font-bold text-lg text-white">{income.source}</h3>
+              <div>
+                <h3 className="font-bold text-lg text-white">{income.source}</h3>
+                <p className="text-sm text-gray-400">
+                  入力日時: {new Date(income.created_at).toLocaleString()}
+                </p>
+              </div>
               <p className="text-white text-xl font-semibold">{income.amount.toLocaleString()}円</p>
-              <p className="text-sm text-gray-400 mt-2">
-                入力日時: {new Date(income.created_at).toLocaleString()}
-              </p>
             </li>
           ))}
         </ul>

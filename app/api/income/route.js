@@ -1,14 +1,14 @@
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+import { NextResponse } from 'next/server';
 
-export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const { source, amount } = req.body;
+export async function POST(request) {
+    try {
+      const { source, amount } = await request.json();
 
     if (!source || !amount) {
       return res.status(400).json({ error: '収入の内容と金額が必要です' });
     }
 
-    try {
       const { data, error } = await supabaseAdmin
         .from('income')
         .insert([{ source, amount }]);
@@ -16,13 +16,12 @@ export default async function handler(req, res) {
       if (error) {
         throw error;
       }
+      console.log('Data inserted successfully:', data);
 
-      res.status(200).json({ message: '収入データが保存されました', data });
+      return NextResponse.json({ message: '収入データが保存されました', data }, { status: 200 });
+
     } catch (error) {
-      res.status(500).json({ error: 'データの保存中にエラーが発生しました' });
+      console.error('Error saving data:', error);
+      return NextResponse.json({ error: 'データの保存中にエラーが発生しました' }, { status: 500 });
     }
-  } else {
-    res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
 }
