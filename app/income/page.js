@@ -1,23 +1,30 @@
-"use client";
+// app/income/page.js
+'use client';
+
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
 
 export default function Income() {
   const [amount, setAmount] = useState('');
   const [source, setSource] = useState('');
   const [incomes, setIncomes] = useState([]);
-  const [filter, setFilter] = useState(''); // フィルタ用の状態を追加
+  const [filter, setFilter] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [errMsg, setErrMsg] = useState('');
 
-  // データ取得
+  // /api/income の GET を叩いて一覧取得（サーバー経由に統一）
   const fetchIncomes = async () => {
-    const { data, error } = await supabase
-      .from('income')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) {
-      console.error('Error fetching incomes:', error);
-    } else {
-      setIncomes(data);
+    setLoading(true);
+    setErrMsg('');
+    try {
+      const res = await fetch('/api/income', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setIncomes(Array.isArray(json.data) ? json.data : []);
+    } catch (e) {
+      console.error('fetchIncomes error:', e);
+      setErrMsg('収入履歴の取得に失敗しました');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -27,30 +34,26 @@ export default function Income() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrMsg('');
     try {
-      const response = await fetch('api/income', {
+      const res = await fetch('/api/income', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ source, amount }),
       });
-      if (!response.ok) {
-        throw new Error('Failed to save income data');
-      }
-      console.log('Income data saved successfully');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setAmount('');
       setSource('');
-      // Re-fetch income data to update the list
-      fetchIncomes();
-    } catch (error) {
-      console.error('Error:', error);
+      await fetchIncomes(); // 保存後に一覧更新
+    } catch (e) {
+      console.error('save error:', e);
+      setErrMsg('保存に失敗しました');
     }
   };
 
-  // フィルタリングされた収入データ
-  const filteredIncomes = incomes.filter(income =>
-    income.source.toLowerCase().includes(filter.toLowerCase())
+  // フィルタ安全化（null対策）
+  const filteredIncomes = incomes.filter((income) =>
+    ((income?.source ?? '') + '').toLowerCase().includes(filter.toLowerCase())
   );
 
   return (
@@ -91,22 +94,37 @@ export default function Income() {
           className="p-2 border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400 mb-4"
         />
 
-        <ul className="space-y-2">
-          {filteredIncomes.map((income) => (
-            <li
-              key={income.id}
-              className="bg-gray-800 shadow-md rounded p-4 hover:shadow-lg transition-shadow flex justify-between items-center"
-            >
-              <div>
-                <h3 className="font-bold text-lg text-white">{income.source}</h3>
-                <p className="text-sm text-gray-400">
-                  入力日時: {new Date(income.created_at).toLocaleString()}
-                </p>
-              </div>
-              <p className="text-white text-xl font-semibold">{income.amount.toLocaleString()}円</p>
-            </li>
-          ))}
-        </ul>
+        {loading ? (
+          <p className="text-gray-400">読み込み中...</p>
+        ) : errMsg ? (
+          <p className="text-red-400">{errMsg}</p>
+        ) : filteredIncomes.length === 0 ? (
+          <p className="text-gray-400">データがありません。</p>
+        ) : (
+          <ul className="space-y-2">
+            {filteredIncomes.map((income) => {
+              const amt = Number(income?.amount);
+              const created =
+                income?.created_at
+                  ? new Date(income.created_at).toLocaleString()
+                  : '—';
+              return (
+                <li
+                  key={income.id}
+                  className="bg-gray-800 shadow-md rounded p-4 hover:shadow-lg transition-shadow flex justify-between items-center"
+                >
+                  <div>
+                    <h3 className="font-bold text-lg text-white">{income?.source ?? '(無題)'}</h3>
+                    <p className="text-sm text-gray-400">入力日時: {created}</p>
+                  </div>
+                  <p className="text-white text-xl font-semibold">
+                    {Number.isFinite(amt) ? amt.toLocaleString() : '—'}円
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );
