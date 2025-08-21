@@ -10,7 +10,7 @@ export async function POST(request) {
     }
 
       const { data, error } = await supabaseAdmin
-        .from('income')
+        .from('income') // 収入履歴登録
         .insert([{ source, amount }]);
 
       if (error) {
@@ -24,4 +24,21 @@ export async function POST(request) {
       console.error('Error saving data:', error);
       return NextResponse.json({ error: 'データの保存中にエラーが発生しました' }, { status: 500 });
     }
+}
+
+// 疎通確認用: GETでデータを取得
+export async function GET() {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('income')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return NextResponse.json({ data }, { status: 200 });
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return NextResponse.json({ error: 'データ取得に失敗しました' }, { status: 500 });
+  }
 }
