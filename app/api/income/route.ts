@@ -1,7 +1,7 @@
 // app/api/income/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 // GET: 一覧取得（クエリ: q, from, to, limit, offset）
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -32,19 +32,18 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 }
 
 // POST: 新規作成
-export async function POST(request: Request): Promise<NextResponse> {
+export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { source?: string; amount?: number | string };
-    const source = body.source ?? '';
-    const n = Number(body.amount);
-
-    if (!source || !Number.isFinite(n)) {
-      return NextResponse.json({ error: '収入の内容と数値の金額が必要です' }, { status: 400 });
+    const json = await request.json();
+    const parsed = IncomeCreateSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'validation_error', issues: zodErrorToMessages(parsed.error) }, { status: 400 });
     }
+    const { source, amount } = parsed.data;
 
     const { data, error } = await supabaseAdmin
       .from('income')
-      .insert([{ source, amount: n }])
+      .insert([{ source, amount }])
       .select();
 
     if (error) throw error;
@@ -55,33 +54,19 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 }
 
-// PATCH: 更新（id 必須）
-export async function PATCH(request: Request): Promise<NextResponse> {
+// PATCH: 更新
+export async function PATCH(request: Request) {
   try {
-    const body = (await request.json()) as { id?: number; source?: string; amount?: number | string };
-    const { id } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: 'id が必要です' }, { status: 400 });
+    const json = await request.json();
+    const parsed = IncomeUpdateSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'validation_error', issues: zodErrorToMessages(parsed.error) }, { status: 400 });
     }
-
-    const patch: Partial<{ source: string; amount: number }> = {};
-    if (typeof body.source === 'string') patch.source = body.source;
-    if (body.amount !== undefined) {
-      const n = Number(body.amount);
-      if (!Number.isFinite(n)) {
-        return NextResponse.json({ error: '金額は数値' }, { status: 400 });
-      }
-      patch.amount = n;
-    }
-
-    if (Object.keys(patch).length === 0) {
-      return NextResponse.json({ error: '更新内容がありません' }, { status: 400 });
-    }
+    const { id, ...rest } = parsed.data;
 
     const { data, error } = await supabaseAdmin
       .from('income')
-      .update(patch)
+      .update(rest)
       .eq('id', id)
       .select();
 
