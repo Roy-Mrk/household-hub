@@ -20,5 +20,9 @@
     "fs",
     "http",
     "net"
-  ]
+  ],
+    "files.associations": {
+    "*.css": "css",
+    "*.scss": "scss"
+  }
 }
