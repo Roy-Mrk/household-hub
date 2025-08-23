@@ -1,24 +1,28 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
-export default function IncomePage() {
-  const [amount, setAmount] = useState('');
-  const [source, setSource] = useState('');
-  const [incomes, setIncomes] = useState([]);
-  const [filter, setFilter] = useState('');
-  const [from, setFrom] = useState('');  // YYYY-MM-DD
-  const [to, setTo] = useState('');      // YYYY-MM-DD
-  const [loading, setLoading] = useState(true);
-  const [errMsg, setErrMsg] = useState('');
-  const [editingId, setEditingId] = useState(null);
-  const [limit] = useState(50);
-  const [offset, setOffset] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
+// 型定義（最低限 / 後で Supabase の自動生成型に差し替え可能）
+import type { Database } from '@/types/database.types';
+type IncomeRow = Database['public']['Tables']['income']['Row'];
+
+export default function IncomePage(): JSX.Element {
+  const [amount, setAmount] = useState<string>('');
+  const [source, setSource] = useState<string>('');
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [filter, setFilter] = useState<string>('');
+  const [from, setFrom] = useState<string>(''); // YYYY-MM-DD
+  const [to, setTo] = useState<string>(''); // YYYY-MM-DD
+  const [loading, setLoading] = useState<boolean>(true);
+  const [errMsg, setErrMsg] = useState<string>('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [limit] = useState<number>(50);
+  const [offset, setOffset] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   const q = filter.trim();
 
-  const load = async () => {
+  const load = async (): Promise<void> => {
     setLoading(true);
     setErrMsg('');
     try {
@@ -31,10 +35,11 @@ export default function IncomePage() {
 
       const res = await fetch(`/api/income?${sp.toString()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      const json = (await res.json()) as { data?: Income[]; count?: number };
       setIncomes(Array.isArray(json.data) ? json.data : []);
-      setTotalCount(json.count ?? 0);
+      setTotalCount(typeof json.count === 'number' ? json.count : 0);
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error(e);
       setErrMsg('収入履歴の取得に失敗しました');
     } finally {
@@ -43,17 +48,17 @@ export default function IncomePage() {
   };
 
   useEffect(() => {
-    load();
+    void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, from, to, offset]);
 
-  const resetForm = () => {
+  const resetForm = (): void => {
     setAmount('');
     setSource('');
     setEditingId(null);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setErrMsg('');
     try {
@@ -70,31 +75,36 @@ export default function IncomePage() {
       resetForm();
       await load();
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error(e);
       setErrMsg(editingId ? '更新に失敗しました' : '保存に失敗しました');
     }
   };
 
-  const handleEdit = (row) => {
+  const handleEdit = (row: Income): void => {
     setEditingId(row.id);
     setSource(row.source ?? '');
     setAmount(String(row.amount ?? ''));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number): Promise<void> => {
+    // eslint-disable-next-line no-restricted-globals
     if (!confirm('削除しますか？')) return;
     try {
       const res = await fetch(`/api/income?id=${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await load();
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error(e);
       setErrMsg('削除に失敗しました');
     }
   };
 
-  const total = useMemo(() => {
+  const total = useMemo<number>(() => {
     return incomes.reduce((sum, row) => {
       const n = Number(row.amount);
       return Number.isFinite(n) ? sum + n : sum;
@@ -102,13 +112,13 @@ export default function IncomePage() {
   }, [incomes]);
 
   // 月範囲をワンタップで入れる補助（今月）
-  const setThisMonth = () => {
+  const setThisMonth = (): void => {
     const d = new Date();
     const y = d.getFullYear();
     const m = d.getMonth();
     const first = new Date(y, m, 1);
     const last = new Date(y, m + 1, 0);
-    const fmt = (dt) => dt.toISOString().slice(0, 10);
+    const fmt = (dt: Date) => dt.toISOString().slice(0, 10);
     setFrom(fmt(first));
     setTo(fmt(last));
     setOffset(0);
@@ -155,20 +165,37 @@ export default function IncomePage() {
             type="text"
             placeholder="収入の内容 を検索"
             value={filter}
-            onChange={(e) => { setFilter(e.target.value); setOffset(0); }}
+            onChange={(e) => {
+              setFilter(e.target.value);
+              setOffset(0);
+            }}
             className="p-2 border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400"
           />
         </div>
         <div className="flex items-end gap-2">
           <div className="flex flex-col">
             <label className="text-sm mb-1">From</label>
-            <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setOffset(0); }}
-                   className="p-2 border border-gray-600 rounded bg-gray-800 text-white" />
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => {
+                setFrom(e.target.value);
+                setOffset(0);
+              }}
+              className="p-2 border border-gray-600 rounded bg-gray-800 text-white"
+            />
           </div>
           <div className="flex flex-col">
             <label className="text-sm mb-1">To</label>
-            <input type="date" value={to} onChange={(e) => { setTo(e.target.value); setOffset(0); }}
-                   className="p-2 border border-gray-600 rounded bg-gray-800 text-white" />
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => {
+                setTo(e.target.value);
+                setOffset(0);
+              }}
+              className="p-2 border border-gray-600 rounded bg-gray-800 text-white"
+            />
           </div>
           <button type="button" onClick={setThisMonth} className="h-10 px-3 bg-gray-700 rounded hover:bg-gray-600">
             今月
@@ -220,7 +247,7 @@ export default function IncomePage() {
         </ul>
       )}
 
-      {/* ページング（必要に応じて拡張） */}
+      {/* ページング */}
       <div className="flex gap-2 mt-6">
         <button
           disabled={offset === 0}
