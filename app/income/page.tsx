@@ -5,11 +5,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 // 型定義（最低限 / 後で Supabase の自動生成型に差し替え可能）
 import type { Database } from '@/types/database.types';
 type IncomeRow = Database['public']['Tables']['income']['Row'];
-
+type IncomeInsert = Database['public']['Tables']['income']['Insert'];
 export default function IncomePage(): JSX.Element {
   const [amount, setAmount] = useState<string>('');
   const [source, setSource] = useState<string>('');
-  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [incomes, setIncomes] = useState<IncomeRow[]>([]);
   const [filter, setFilter] = useState<string>('');
   const [from, setFrom] = useState<string>(''); // YYYY-MM-DD
   const [to, setTo] = useState<string>(''); // YYYY-MM-DD
@@ -35,7 +35,7 @@ export default function IncomePage(): JSX.Element {
 
       const res = await fetch(`/api/income?${sp.toString()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = (await res.json()) as { data?: Income[]; count?: number };
+      const json = (await res.json()) as { data?: IncomeRow[]; count?: number };
       setIncomes(Array.isArray(json.data) ? json.data : []);
       setTotalCount(typeof json.count === 'number' ? json.count : 0);
     } catch (e) {
@@ -81,7 +81,7 @@ export default function IncomePage(): JSX.Element {
     }
   };
 
-  const handleEdit = (row: Income): void => {
+    const handleEdit = (row: IncomeRow): void => {
     setEditingId(row.id);
     setSource(row.source ?? '');
     setAmount(String(row.amount ?? ''));
@@ -267,3 +267,6 @@ export default function IncomePage(): JSX.Element {
     </div>
   );
 }
+
+// すでにUIやメッセージは日本語です。
+// 追加の日本語化要望があれば、具体的にご指示ください。
