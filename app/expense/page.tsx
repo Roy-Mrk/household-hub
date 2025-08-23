@@ -127,7 +127,7 @@ export default function ExpensePage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-sm mb-6">
         <input
           type="text"
-          placeholder="支出の内容/カテゴリ"
+          placeholder="支出の内容"
           value={source}
           onChange={(e) => setSource(e.target.value)}
           className="p-2 border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400"
@@ -158,7 +158,7 @@ export default function ExpensePage() {
           <label className="text-sm mb-1">テキスト検索</label>
           <input
             type="text"
-            placeholder="カテゴリを検索"
+            placeholder="内容を検索"
             value={filter}
             onChange={(e) => {
               setFilter(e.target.value);
