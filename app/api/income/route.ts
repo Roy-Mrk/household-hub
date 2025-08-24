@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { IncomeCreateSchema, IncomeUpdateSchema, zodErrorToMessages } from '@/lib/validation';
 
 // GET: 一覧取得（クエリ: q, from, to, limit, offset）
 export async function GET(req: NextRequest): Promise<NextResponse> {

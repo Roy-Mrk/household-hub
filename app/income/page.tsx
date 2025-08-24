@@ -2,7 +2,24 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 
-// 型定義（最低限 / 後で Supabase の自動生成型に差し替え可能）
+// APIエラー本文を安全に取り出すヘルパー
+async function readApiError(res: Response): Promise<string> {
+  try {
+    const j = await res.json();
+    if (j && Array.isArray(j.issues) && j.issues.length > 0) {
+      // Zod 由来の詳細メッセージを結合
+      return j.issues.map((i: any) => i?.message).filter(Boolean).join('\n');
+    }
+    if (j && j.error) {
+      return typeof j.error === 'string' ? j.error : JSON.stringify(j.error);
+    }
+  } catch (_) {
+    // 本文がJSONでない場合は無視
+  }
+  return `HTTP ${res.status}`;
+}
+
+// 型定義
 import type { Database } from '@/types/database.types';
 type IncomeRow = Database['public']['Tables']['income']['Row'];
 type IncomeInsert = Database['public']['Tables']['income']['Insert'];
@@ -34,7 +51,13 @@ export default function IncomePage(): JSX.Element {
       sp.set('offset', String(offset));
 
       const res = await fetch(`/api/income?${sp.toString()}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const msg = await readApiError(res);
+        setErrMsg(msg || `HTTP ${res.status}`);
+        setIncomes([]);
+        setTotalCount(0);
+        return;
+      }
       const json = (await res.json()) as { data?: IncomeRow[]; count?: number };
       setIncomes(Array.isArray(json.data) ? json.data : []);
       setTotalCount(typeof json.count === 'number' ? json.count : 0);
@@ -71,7 +94,11 @@ export default function IncomePage(): JSX.Element {
         headers: { 'Content-Type': 'application/json' },
         body,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const msg = await readApiError(res);
+        setErrMsg(msg);
+        return;
+      }
       resetForm();
       await load();
     } catch (e) {
@@ -95,7 +122,11 @@ export default function IncomePage(): JSX.Element {
     if (!confirm('削除しますか？')) return;
     try {
       const res = await fetch(`/api/income?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const msg = await readApiError(res);
+        setErrMsg(msg);
+        return;
+      }
       await load();
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -154,7 +185,7 @@ export default function IncomePage(): JSX.Element {
             </button>
           )}
         </div>
-        {errMsg && <p className="text-red-400">{errMsg}</p>}
+        {errMsg && <p className="text-red-400 whitespace-pre-line">{errMsg}</p>}
       </form>
 
       {/* フィルタ＆ヘッダ */}
@@ -267,6 +298,3 @@ export default function IncomePage(): JSX.Element {
     </div>
   );
 }
-
-// すでにUIやメッセージは日本語です。
-// 追加の日本語化要望があれば、具体的にご指示ください。
