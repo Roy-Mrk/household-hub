@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import EditEntryModal from '@/components/EditEntryModal';
 import { readApiError } from '@/lib/ui/readApiError';
-// APIエラー本文を安全に取り出すヘルパー
 
 // 型定義
 import type { Database } from '@/types/database.types';
@@ -21,7 +21,9 @@ export default function IncomePage(): JSX.Element {
   const [limit] = useState<number>(50);
   const [offset, setOffset] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
-
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<IncomeRow | null>(null);
+  const [modalErr, setModalErr] = useState('');
   const q = filter.trim();
 
   const load = async (): Promise<void> => {
@@ -93,15 +95,32 @@ export default function IncomePage(): JSX.Element {
     }
   };
 
-    const handleEdit = (row: IncomeRow): void => {
-    setEditingId(row.id);
-    setSource(row.source ?? '');
-    setAmount(String(row.amount ?? ''));
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  const handleEdit = (row: IncomeRow): void => {
+    setEditItem(row);
+    setModalErr('');
+    setModalOpen(true);
   };
 
+  const handleSaveEdit = async (patch: { id: number; source?: string; amount?: number }) => {
+    try {
+      const res = await fetch('/api/income', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const msg = await readApiError(res);
+        setModalErr(msg);
+        return;
+      }
+      setModalOpen(false);
+      setEditItem(null);
+      await load();
+    } catch (e) {
+      console.error(e);
+      setModalErr('更新に失敗しました');
+    }
+  };
   const handleDelete = async (id: number): Promise<void> => {
     // eslint-disable-next-line no-restricted-globals
     if (!confirm('削除しますか？')) return;
@@ -280,6 +299,19 @@ export default function IncomePage(): JSX.Element {
           次へ
         </button>
       </div>
+      <EditEntryModal
+        open={modalOpen}
+        title="収入を編集"
+        initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount } : null}
+        onClose={() => {
+          setModalOpen(false);
+          setEditItem(null);
+        }}
+        onSave={handleSaveEdit}
+        error={modalErr}
+        setError={setModalErr}
+      />
     </div>
+    
   );
 }
