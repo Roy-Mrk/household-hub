@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { ExpenseCreateSchema, ExpenseUpdateSchema } from '@/lib/validation/expense';
+import { zodErrorToMessages } from '@/lib/validation/common';
 
 export async function GET(req: NextRequest) {
   try {
@@ -32,16 +34,19 @@ export async function GET(req: NextRequest) {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { source?: string; amount?: number | string };
-    const source = body.source ?? '';
-    const n = Number(body.amount);
-    if (!source || !Number.isFinite(n)) {
-      return NextResponse.json({ error: '支出の内容と数値の金額が必要です' }, { status: 400 });
+    const json = await request.json();
+    const parsed = ExpenseCreateSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'validation_error', issues: zodErrorToMessages(parsed.error) },
+        { status: 400 }
+      );
     }
+    const { source, amount } = parsed.data;
 
     const { data, error } = await supabaseAdmin
       .from('expense')
-      .insert([{ source, amount: n }])
+      .insert([{ source, amount }])
       .select();
 
     if (error) throw error;
@@ -54,20 +59,16 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const body = (await request.json()) as { id?: number; source?: string; amount?: number | string };
-    const { id } = body;
-    if (!id) return NextResponse.json({ error: 'id が必要です' }, { status: 400 });
+    const json = await request.json();
+    const parsed = ExpenseUpdateSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'validation_error', issues: zodErrorToMessages(parsed.error) },
+        { status: 400 }
+      );
+    }
 
-    const patch: Partial<{ source: string; amount: number }> = {};
-    if (typeof body.source === 'string') patch.source = body.source;
-    if (body.amount !== undefined) {
-      const n = Number(body.amount);
-      if (!Number.isFinite(n)) return NextResponse.json({ error: '金額は数値' }, { status: 400 });
-      patch.amount = n;
-    }
-    if (Object.keys(patch).length === 0) {
-      return NextResponse.json({ error: '更新内容がありません' }, { status: 400 });
-    }
+    const { id, ...patch } = parsed.data as { id: number; source?: string; amount?: number };
 
     const { data, error } = await supabaseAdmin
       .from('expense')

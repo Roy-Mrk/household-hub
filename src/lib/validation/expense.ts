@@ -1,9 +1,5 @@
 import { z } from 'zod';
-
-// Expense用スキーマ
-
-const sourceSchema = z.string().trim().min(1, '内容は必須です').max(100, '100文字以内');
-const amountSchema = z.coerce.number().int('整数で入力してください').nonnegative('0以上で入力').lte(1_000_000_000, '大きすぎます');
+import { sourceSchema, amountSchema } from './common';
 
 // 新規登録スキーマ
 export const ExpenseCreateSchema = z.object({
