@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-
+import { readApiError } from '@/lib/ui/readApiError';
 
 import type { Database } from '@/types/database.types';
+
 type ExpenseRow = Database['public']['Tables']['expense']['Row'];
 export default function ExpensePage() {
   const [source, setSource] = useState('');
@@ -33,7 +34,13 @@ export default function ExpensePage() {
       sp.set('offset', String(offset));
 
       const res = await fetch(`/api/expense?${sp.toString()}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const msg = await readApiError(res);
+        setErrMsg(msg || `HTTP ${res.status}`);
+        setExpenses([]);
+        setTotalCount(0);
+        return;
+      }
       const json = (await res.json()) as { data?: ExpenseRow[]; count?: number };
       setExpenses(Array.isArray(json.data) ? json.data : []);
       setTotalCount(typeof json.count === 'number' ? json.count : 0);
@@ -69,7 +76,11 @@ export default function ExpensePage() {
         headers: { 'Content-Type': 'application/json' },
         body,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const msg = await readApiError(res);
+        setErrMsg(msg);
+        return;
+      }
       resetForm();
       await load();
     } catch (e) {
@@ -92,7 +103,11 @@ export default function ExpensePage() {
     if (!confirm('削除しますか？')) return;
     try {
       const res = await fetch(`/api/expense?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const msg = await readApiError(res);
+        setErrMsg(msg);
+        return;
+      }
       await load();
     } catch (e) {
       console.error(e);
@@ -149,13 +164,13 @@ export default function ExpensePage() {
             </button>
           )}
         </div>
-        {errMsg && <p className="text-red-400">{errMsg}</p>}
+        {errMsg && <p className="text-red-400 whitespace-pre-line">{errMsg}</p>}
       </form>
 
       {/* フィルタ＆ヘッダ */}
       <div className="mb-4 flex flex-col md:flex-row gap-3 items-start md:items-end">
         <div className="flex flex-col">
-          <label className="text-sm mb-1">テキスト検索</label>
+          <label className="text-sm mb-1">内容</label>
           <input
             type="text"
             placeholder="内容を検索"

@@ -1,23 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-
+import { readApiError } from '@/lib/ui/readApiError';
 // APIエラー本文を安全に取り出すヘルパー
-async function readApiError(res: Response): Promise<string> {
-  try {
-    const j = await res.json();
-    if (j && Array.isArray(j.issues) && j.issues.length > 0) {
-      // Zod 由来の詳細メッセージを結合
-      return j.issues.map((i: any) => i?.message).filter(Boolean).join('\n');
-    }
-    if (j && j.error) {
-      return typeof j.error === 'string' ? j.error : JSON.stringify(j.error);
-    }
-  } catch (_) {
-    // 本文がJSONでない場合は無視
-  }
-  return `HTTP ${res.status}`;
-}
 
 // 型定義
 import type { Database } from '@/types/database.types';
@@ -191,10 +176,10 @@ export default function IncomePage(): JSX.Element {
       {/* フィルタ＆ヘッダ */}
       <div className="mb-4 flex flex-col md:flex-row gap-3 items-start md:items-end">
         <div className="flex flex-col">
-          <label className="text-sm mb-1">収入の内容</label>
+          <label className="text-sm mb-1">内容</label>
           <input
             type="text"
-            placeholder="収入の内容 を検索"
+            placeholder="内容を検索"
             value={filter}
             onChange={(e) => {
               setFilter(e.target.value);
