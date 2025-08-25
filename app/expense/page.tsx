@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { readApiError } from '@/lib/ui/readApiError';
+import EditEntryModal from '@/components/EditEntryModal';
 
 import type { Database } from '@/types/database.types';
 
@@ -19,6 +20,10 @@ export default function ExpensePage() {
   const [limit] = useState(50);
   const [offset, setOffset] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<ExpenseRow | null>(null);
+  const [modalErr, setModalErr] = useState('');
 
   const q = filter.trim();
 
@@ -90,11 +95,29 @@ export default function ExpensePage() {
   };
 
   const handleEdit = (row: ExpenseRow) => {
-    setEditingId(row.id);
-    setSource(row.source ?? '');
-    setAmount(String(row.amount ?? ''));
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    setEditItem(row);
+    setModalErr('');
+    setModalOpen(true);
+  };
+
+  const handleSaveEdit = async (patch: { id: number; source?: string; amount?: number }) => {
+    try {
+      const res = await fetch('/api/expense', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const msg = await readApiError(res);
+        setModalErr(msg);
+        return;
+      }
+      setModalOpen(false);
+      setEditItem(null);
+      await load();
+    } catch (e) {
+      console.error(e);
+      setModalErr('更新に失敗しました');
     }
   };
 
@@ -268,6 +291,19 @@ export default function ExpensePage() {
           次へ
         </button>
       </div>
+
+      <EditEntryModal
+        open={modalOpen}
+        title="支出を編集"
+        initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount } : null}
+        onClose={() => {
+          setModalOpen(false);
+          setEditItem(null);
+        }}
+        onSave={handleSaveEdit}
+        error={modalErr}
+        setError={setModalErr}
+      />
     </div>
   );
 }
