@@ -14,7 +14,7 @@ type Props = {
   title?: string;
   initial: EditEntry | null;
   onClose: () => void;
-  onSave: (patch: { id: number; source?: string; amount?: number }) => Promise<void>;
+  onSave: (payload: { id?: number; source: string; amount: number }) => Promise<void>;
   error?: string;
   setError?: (msg: string) => void;
 };
@@ -38,10 +38,16 @@ export default function EditEntryModal({
     }
   }, [initial]);
 
+  useEffect(() => {
+    if (!initial) {
+      setSource('');
+      setAmount('');
+    }
+  }, [initial]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError?.('');
-    if (!initial) return;
     const n = Number(amount);
     if (!source.trim()) {
       setError?.('内容は必須です');
@@ -51,7 +57,7 @@ export default function EditEntryModal({
       setError?.('金額は0以上の整数で入力してください');
       return;
     }
-    await onSave({ id: initial.id, source: source.trim(), amount: n });
+    await onSave({ id: initial?.id, source: source.trim(), amount: n });
   };
 
   return (

@@ -8,15 +8,12 @@ import type { Database } from '@/types/database.types';
 
 type ExpenseRow = Database['public']['Tables']['expense']['Row'];
 export default function ExpensePage() {
-  const [source, setSource] = useState('');
-  const [amount, setAmount] = useState('');
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [filter, setFilter] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState('');
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [limit] = useState(50);
   const [offset, setOffset] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
@@ -62,50 +59,14 @@ export default function ExpensePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, from, to, offset]);
 
-  const resetForm = () => {
-    setSource('');
-    setAmount('');
-    setEditingId(null);
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setErrMsg('');
+  const handleSave = async (payload: { id?: number; source: string; amount: number }) => {
     try {
-      const payload = { source, amount };
-      const method = editingId ? 'PATCH' : 'POST';
-      const body = editingId ? JSON.stringify({ id: editingId, ...payload }) : JSON.stringify(payload);
-
+      const method = payload.id ? 'PATCH' : 'POST';
+      const body = payload.id ? JSON.stringify(payload) : JSON.stringify({ source: payload.source, amount: payload.amount });
       const res = await fetch('/api/expense', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body,
-      });
-      if (!res.ok) {
-        const msg = await readApiError(res);
-        setErrMsg(msg);
-        return;
-      }
-      resetForm();
-      await load();
-    } catch (e) {
-      console.error(e);
-      setErrMsg(editingId ? '更新に失敗しました' : '保存に失敗しました');
-    }
-  };
-
-  const handleEdit = (row: ExpenseRow) => {
-    setEditItem(row);
-    setModalErr('');
-    setModalOpen(true);
-  };
-
-  const handleSaveEdit = async (patch: { id: number; source?: string; amount?: number }) => {
-    try {
-      const res = await fetch('/api/expense', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
       });
       if (!res.ok) {
         const msg = await readApiError(res);
@@ -117,8 +78,14 @@ export default function ExpensePage() {
       await load();
     } catch (e) {
       console.error(e);
-      setModalErr('更新に失敗しました');
+      setModalErr(payload.id ? '更新に失敗しました' : '保存に失敗しました');
     }
+  };
+
+  const handleEdit = (row: ExpenseRow) => {
+    setEditItem(row);
+    setModalErr('');
+    setModalOpen(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -161,34 +128,20 @@ export default function ExpensePage() {
     <div className="min-h-screen bg-gray-900 text-white p-4">
       <h1 className="text-2xl font-bold mb-4">支出</h1>
 
-      {/* 入力/編集フォーム */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-sm mb-6">
-        <input
-          type="text"
-          placeholder="支出の内容"
-          value={source}
-          onChange={(e) => setSource(e.target.value)}
-          className="p-2 border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400"
-        />
-        <input
-          type="number"
-          placeholder="金額"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="p-2 border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400"
-        />
-        <div className="flex gap-2">
-          <button type="submit" className="bg-blue-700 text-white py-2 px-4 rounded hover:bg-blue-800 transition-colors">
-            {editingId ? '更新' : '保存'}
-          </button>
-          {editingId && (
-            <button type="button" onClick={resetForm} className="border border-gray-500 py-2 px-4 rounded hover:bg-gray-800">
-              キャンセル
-            </button>
-          )}
-        </div>
-        {errMsg && <p className="text-red-400 whitespace-pre-line">{errMsg}</p>}
-      </form>
+      {/* 新規追加ボタン */}
+      <div className="mb-6">
+        <button
+          type="button"
+          onClick={() => {
+            setEditItem(null); // 新規
+            setModalErr('');
+            setModalOpen(true);
+          }}
+          className="rounded bg-blue-700 px-4 py-2 text-white hover:bg-blue-800"
+        >
+          新規追加
+        </button>
+      </div>
 
       {/* フィルタ＆ヘッダ */}
       <div className="mb-4 flex flex-col md:flex-row gap-3 items-start md:items-end">
@@ -294,13 +247,13 @@ export default function ExpensePage() {
 
       <EditEntryModal
         open={modalOpen}
-        title="支出を編集"
+        title={editItem ? '支出を編集' : '支出を追加'}
         initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount } : null}
         onClose={() => {
           setModalOpen(false);
           setEditItem(null);
         }}
-        onSave={handleSaveEdit}
+        onSave={handleSave}
         error={modalErr}
         setError={setModalErr}
       />
