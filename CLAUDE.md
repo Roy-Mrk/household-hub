@@ -64,6 +64,6 @@ Two tables with identical structure (`income`, `expense`): `id`, `source`, `amou
 - Path alias `@/*` maps to `./src/*`
 - New pages/components should be TypeScript (`.tsx`/`.ts`); existing `.js` files can be left as-is
 - Zod schemas live in `src/lib/validation/` and are the single source of truth for request shape — add new schemas there and re-export from `index.ts`
-- UI text is in Japanese
+- UI text and code comments are in Japanese
 - Dark theme throughout (`bg-gray-900`/`bg-gray-800`, white text)
 - Per-page local state via `useState`/`useEffect`; no global state management
