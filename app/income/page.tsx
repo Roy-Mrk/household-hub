@@ -101,10 +101,10 @@ export default function IncomePage(): JSX.Element {
     setModalOpen(true);
   };
 
-  const handleSave = async (payload: { id?: number; source: string; amount: number }) => {
+  const handleSave = async (payload: { id?: number; source: string; amount: number; category: string; entry_date: string }) => {
     try {
       const method = payload.id ? 'PATCH' : 'POST';
-      const body = payload.id ? JSON.stringify(payload) : JSON.stringify({ source: payload.source, amount: payload.amount });
+      const body = JSON.stringify(payload.id ? payload : { source: payload.source, amount: payload.amount, category: payload.category, entry_date: payload.entry_date });
       const res = await fetch('/api/income', {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -238,13 +238,14 @@ export default function IncomePage(): JSX.Element {
         <ul className="space-y-2">
           {incomes.map((income) => {
             const amt = Number(income?.amount);
-            const created = income?.created_at ? new Date(income.created_at).toLocaleString() : '—';
+            const entryDate = income?.entry_date ? new Date(income.entry_date).toLocaleDateString() : '—';
             return (
               <li key={income.id} className="bg-gray-800 shadow-md rounded p-4 hover:shadow-lg transition-shadow">
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="font-bold text-lg text-white">{income?.source ?? '(無題)'}</h3>
-                    <p className="text-sm text-gray-400">入力日時: {created}</p>
+                    <p className="text-sm text-gray-400">カテゴリ: {income.category ?? '—'}</p>
+                    <p className="text-sm text-gray-400">日付: {entryDate}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <p className="text-white text-xl font-semibold">
@@ -290,7 +291,7 @@ export default function IncomePage(): JSX.Element {
       <EditEntryModal
         open={modalOpen}
         title={editItem ? '収入を編集' : '収入を追加'}
-        initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount } : null}
+        initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount, category: editItem.category ?? '', entry_date: editItem.entry_date ?? '' } : null}
         onClose={() => {
           setModalOpen(false);
           setEditItem(null);

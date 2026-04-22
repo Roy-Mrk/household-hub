@@ -1,9 +1,11 @@
 import { z } from 'zod';
-import { sourceSchema, amountSchema } from './common';
+import { sourceSchema, amountSchema, categorySchema, entryDateSchema } from './common';
 
 export const IncomeCreateSchema = z.object({
   source: sourceSchema,
   amount: amountSchema,
+  category: categorySchema,
+  entry_date: entryDateSchema,
 });
 
 export const IncomeUpdateSchema = z

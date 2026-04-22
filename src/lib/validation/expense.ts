@@ -1,10 +1,12 @@
 import { z } from 'zod';
-import { sourceSchema, amountSchema } from './common';
+import { sourceSchema, amountSchema, categorySchema, entryDateSchema } from './common';
 
 // 新規登録スキーマ
 export const ExpenseCreateSchema = z.object({
   source: sourceSchema,
   amount: amountSchema,
+  category: categorySchema,
+  entry_date: entryDateSchema,
 });
 
 // 更新スキーマ

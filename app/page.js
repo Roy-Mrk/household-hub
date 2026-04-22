@@ -7,10 +7,11 @@ export default function Home() {
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
         <Image
           className="dark:invert"
-          src="/next.svg"
+          // src="/next.svg"
+          src="/logo.png"
           alt="Next.js logo"
-          width={180}
-          height={38}
+          width={300}
+          height={3000}
           priority
         />
         <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
@@ -95,18 +96,6 @@ export default function Home() {
             height={16}
           />
           Go to nextjs.org →
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="/income"
-        >
-          Income
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="/expense"
-        >
-          Expense
         </a>
       </footer>
     </div>
