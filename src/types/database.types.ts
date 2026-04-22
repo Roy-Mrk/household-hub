@@ -17,21 +17,27 @@ export type Database = {
       expense: {
         Row: {
           amount: number
+          category: string
           created_at: string
+          entry_date: string
           id: number
           source: string
           updated_at: string
         }
         Insert: {
           amount: number
+          category?: string
           created_at?: string
+          entry_date?: string
           id?: number
           source: string
           updated_at?: string
         }
         Update: {
           amount?: number
+          category?: string
           created_at?: string
+          entry_date?: string
           id?: number
           source?: string
           updated_at?: string
@@ -41,21 +47,27 @@ export type Database = {
       income: {
         Row: {
           amount: number
+          category: string
           created_at: string
+          entry_date: string
           id: number
           source: string
           updated_at: string
         }
         Insert: {
           amount?: number
+          category?: string
           created_at?: string
+          entry_date?: string
           id?: number
           source: string
           updated_at?: string
         }
         Update: {
           amount?: number
+          category?: string
           created_at?: string
+          entry_date?: string
           id?: number
           source?: string
           updated_at?: string
