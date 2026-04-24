@@ -17,10 +17,11 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin.from('expense').select('*', { count: 'exact' });
 
     if (q) query = query.ilike('source', `%${q}%`);
-    if (from) query = query.gte('created_at', from);
-    if (to) query = query.lte('created_at', to);
+    if (from) query = query.gte('entry_date', from);
+    if (to) query = query.lte('entry_date', to);
 
     const { data, error, count } = await query
+      .order('entry_date', { ascending: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -42,11 +43,11 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const { source, amount } = parsed.data;
+    const { source, amount, category, entry_date } = parsed.data as { source: string; amount: number; category: string; entry_date: string };
 
     const { data, error } = await supabaseAdmin
       .from('expense')
-      .insert([{ source, amount }])
+      .insert([{ source, amount, category, entry_date }])
       .select();
 
     if (error) throw error;
@@ -68,7 +69,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const { id, ...patch } = parsed.data as { id: number; source?: string; amount?: number };
+    const { id, ...patch } = parsed.data as { id: number; source?: string; amount?: number; category?: string; entry_date?: string };
 
     const { data, error } = await supabaseAdmin
       .from('expense')

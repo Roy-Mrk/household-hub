@@ -101,12 +101,14 @@ export default function IncomePage(): JSX.Element {
     setModalOpen(true);
   };
 
-  const handleSaveEdit = async (patch: { id: number; source?: string; amount?: number }) => {
+  const handleSave = async (payload: { id?: number; source: string; amount: number; category: string; entry_date: string }) => {
     try {
+      const method = payload.id ? 'PATCH' : 'POST';
+      const body = JSON.stringify(payload.id ? payload : { source: payload.source, amount: payload.amount, category: payload.category, entry_date: payload.entry_date });
       const res = await fetch('/api/income', {
-        method: 'PATCH',
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
+        body,
       });
       if (!res.ok) {
         const msg = await readApiError(res);
@@ -118,7 +120,7 @@ export default function IncomePage(): JSX.Element {
       await load();
     } catch (e) {
       console.error(e);
-      setModalErr('更新に失敗しました');
+      setModalErr(payload.id ? '更新に失敗しました' : '保存に失敗しました');
     }
   };
   const handleDelete = async (id: number): Promise<void> => {
@@ -163,34 +165,20 @@ export default function IncomePage(): JSX.Element {
     <div className="min-h-screen bg-gray-900 text-white p-4">
       <h1 className="text-2xl font-bold mb-4">収入</h1>
 
-      {/* 入力/編集フォーム */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-sm mb-6">
-        <input
-          type="text"
-          placeholder="収入の内容"
-          value={source}
-          onChange={(e) => setSource(e.target.value)}
-          className="p-2 border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400"
-        />
-        <input
-          type="number"
-          placeholder="金額"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="p-2 border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400"
-        />
-        <div className="flex gap-2">
-          <button type="submit" className="bg-blue-700 text-white py-2 px-4 rounded hover:bg-blue-800 transition-colors">
-            {editingId ? '更新' : '保存'}
-          </button>
-          {editingId && (
-            <button type="button" onClick={resetForm} className="border border-gray-500 py-2 px-4 rounded hover:bg-gray-800">
-              キャンセル
-            </button>
-          )}
-        </div>
-        {errMsg && <p className="text-red-400 whitespace-pre-line">{errMsg}</p>}
-      </form>
+      {/* 新規追加ボタン */}
+      <div className="mb-6">
+        <button
+          type="button"
+          onClick={() => {
+            setEditItem(null); // 新規
+            setModalErr('');
+            setModalOpen(true);
+          }}
+          className="rounded bg-blue-700 px-4 py-2 text-white hover:bg-blue-800"
+        >
+          新規追加
+        </button>
+      </div>
 
       {/* フィルタ＆ヘッダ */}
       <div className="mb-4 flex flex-col md:flex-row gap-3 items-start md:items-end">
@@ -250,13 +238,14 @@ export default function IncomePage(): JSX.Element {
         <ul className="space-y-2">
           {incomes.map((income) => {
             const amt = Number(income?.amount);
-            const created = income?.created_at ? new Date(income.created_at).toLocaleString() : '—';
+            const entryDate = income?.entry_date ? new Date(income.entry_date).toLocaleDateString() : '—';
             return (
               <li key={income.id} className="bg-gray-800 shadow-md rounded p-4 hover:shadow-lg transition-shadow">
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="font-bold text-lg text-white">{income?.source ?? '(無題)'}</h3>
-                    <p className="text-sm text-gray-400">入力日時: {created}</p>
+                    <p className="text-sm text-gray-400">カテゴリ: {income.category ?? '—'}</p>
+                    <p className="text-sm text-gray-400">日付: {entryDate}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <p className="text-white text-xl font-semibold">
@@ -301,13 +290,13 @@ export default function IncomePage(): JSX.Element {
       </div>
       <EditEntryModal
         open={modalOpen}
-        title="収入を編集"
-        initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount } : null}
+        title={editItem ? '収入を編集' : '収入を追加'}
+        initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount, category: editItem.category ?? '', entry_date: editItem.entry_date ?? '' } : null}
         onClose={() => {
           setModalOpen(false);
           setEditItem(null);
         }}
-        onSave={handleSaveEdit}
+        onSave={handleSave}
         error={modalErr}
         setError={setModalErr}
       />
