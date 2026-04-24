@@ -41,4 +41,3 @@ create policy expense_cud_authenticated
 
 -- インデックス
 create index if not exists idx_expense_created_at_desc on public.expense (created_at desc);
-create index if not exists idx_expense_category on public.expense (category);
