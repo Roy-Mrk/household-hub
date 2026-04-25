@@ -59,6 +59,11 @@ Pages are client components (`'use client'`) that fetch from the internal API ro
 
 Two tables with identical structure (`income`, `expense`): `id`, `source`, `amount`, `created_at`, `updated_at`. RLS is enabled — anonymous users get SELECT only; authenticated users get full CRUD. `updated_at` is maintained by a trigger.
 
+### GitHub Conventions
+
+- PRを作成するときは、関連するissue番号を必ず body に `Closes #N` の形式で含める（例: `Closes #6`）
+- これによりPRがmainにマージされたとき、GitHubが対象issueを自動でクローズする
+
 ### Key Conventions
 
 - Path alias `@/*` maps to `./src/*`
