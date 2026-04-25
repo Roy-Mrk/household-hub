@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { makeQueryMock } from '../helpers/queryMock';
 
-// Supabaseクライアントをモック
 const mockFrom = vi.fn();
 const mockGetUser = vi.fn();
 
@@ -14,7 +14,6 @@ vi.mock('@/lib/supabaseServerClient', () => ({
   ),
 }));
 
-// next/headersをモック（supabaseServerClientの内部で使用）
 vi.mock('next/headers', () => ({
   cookies: vi.fn(() => ({ get: vi.fn(), set: vi.fn(), delete: vi.fn() })),
 }));
@@ -22,27 +21,6 @@ vi.mock('next/headers', () => ({
 import { GET, POST, PATCH, DELETE } from '../../app/api/income/route';
 
 const TEST_USER = { id: 'user-123', email: 'test@example.com' };
-
-// チェーン可能かつ await 可能なクエリビルダーのモック
-// - select() は Promise を返す（GET の range()、POST/PATCH の終端として使用）
-// - eq() はチェーンを返しつつ thenable（DELETE の終端として await 可能）
-function makeQueryMock(result: object) {
-  const q: Record<string, unknown> = {};
-  const chain = () => q;
-  q['then'] = (resolve: (v: unknown) => unknown, reject?: (r: unknown) => unknown) =>
-    Promise.resolve(result).then(resolve, reject);
-  q.select = vi.fn(chain);
-  q.insert = vi.fn(chain);
-  q.update = vi.fn(chain);
-  q.delete = vi.fn(chain);
-  q.ilike = vi.fn(chain);
-  q.gte = vi.fn(chain);
-  q.lte = vi.fn(chain);
-  q.order = vi.fn(chain);
-  q.range = vi.fn(() => Promise.resolve(result));
-  q.eq = vi.fn(chain);
-  return q;
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -133,6 +111,9 @@ describe('POST /api/income', () => {
     const res = await POST(req);
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ message: '作成OK' });
+    expect(q.insert).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ user_id: TEST_USER.id })])
+    );
   });
 
   it('sourceが空の場合はバリデーションエラー400', async () => {
