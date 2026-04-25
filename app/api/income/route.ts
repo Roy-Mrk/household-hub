@@ -1,11 +1,15 @@
 // app/api/income/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
 import { IncomeCreateSchema, IncomeUpdateSchema, zodErrorToMessages } from '@/lib/validation';
 
 // GET: 一覧取得（クエリ: q, from, to, limit, offset）
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+
   try {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get('q') ?? '';
@@ -14,7 +18,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const limit = Number(searchParams.get('limit') ?? 50);
     const offset = Number(searchParams.get('offset') ?? 0);
 
-    let query = supabaseAdmin.from('income').select('*', { count: 'exact' });
+    let query = supabase.from('income').select('*', { count: 'exact' });
 
     if (q) query = query.ilike('source', `%${q}%`);
     if (from) query = query.gte('entry_date', from);
@@ -35,6 +39,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
 // POST: 新規作成
 export async function POST(request: Request) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+
   try {
     const json = await request.json();
     const parsed = IncomeCreateSchema.safeParse(json);
@@ -43,9 +51,9 @@ export async function POST(request: Request) {
     }
     const { source, amount, category, entry_date } = parsed.data as { source: string; amount: number; category: string; entry_date: string };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from('income')
-      .insert([{ source, amount, category, entry_date }])
+      .insert([{ source, amount, category, entry_date, user_id: user.id }])
       .select();
 
     if (error) throw error;
@@ -58,6 +66,10 @@ export async function POST(request: Request) {
 
 // PATCH: 更新
 export async function PATCH(request: Request) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+
   try {
     const json = await request.json();
     const parsed = IncomeUpdateSchema.safeParse(json);
@@ -66,7 +78,7 @@ export async function PATCH(request: Request) {
     }
     const { id, ...rest } = parsed.data as { id: number; source?: string; amount?: number; category?: string; entry_date?: string };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from('income')
       .update(rest)
       .eq('id', id)
@@ -82,6 +94,10 @@ export async function PATCH(request: Request) {
 
 // DELETE: 削除（id 必須）
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+
   try {
     const { searchParams } = new URL(request.url);
     const idParam = searchParams.get('id');
@@ -91,7 +107,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'id が必要です' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin.from('income').delete().eq('id', id);
+    const { error } = await supabase.from('income').delete().eq('id', id);
     if (error) throw error;
 
     return NextResponse.json({ message: '削除OK' }, { status: 200 });

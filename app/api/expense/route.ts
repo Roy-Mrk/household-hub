@@ -1,11 +1,15 @@
 // app/api/expense/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
 import { ExpenseCreateSchema, ExpenseUpdateSchema } from '@/lib/validation/expense';
 import { zodErrorToMessages } from '@/lib/validation/common';
 
 export async function GET(req: NextRequest) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+
   try {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get('q') ?? '';
@@ -14,7 +18,7 @@ export async function GET(req: NextRequest) {
     const limit = Number(searchParams.get('limit') ?? 50);
     const offset = Number(searchParams.get('offset') ?? 0);
 
-    let query = supabaseAdmin.from('expense').select('*', { count: 'exact' });
+    let query = supabase.from('expense').select('*', { count: 'exact' });
 
     if (q) query = query.ilike('source', `%${q}%`);
     if (from) query = query.gte('entry_date', from);
@@ -34,6 +38,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(request: Request) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+
   try {
     const json = await request.json();
     const parsed = ExpenseCreateSchema.safeParse(json);
@@ -45,9 +53,9 @@ export async function POST(request: Request) {
     }
     const { source, amount, category, entry_date } = parsed.data as { source: string; amount: number; category: string; entry_date: string };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from('expense')
-      .insert([{ source, amount, category, entry_date }])
+      .insert([{ source, amount, category, entry_date, user_id: user.id }])
       .select();
 
     if (error) throw error;
@@ -59,6 +67,10 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+
   try {
     const json = await request.json();
     const parsed = ExpenseUpdateSchema.safeParse(json);
@@ -71,7 +83,7 @@ export async function PATCH(request: Request) {
 
     const { id, ...patch } = parsed.data as { id: number; source?: string; amount?: number; category?: string; entry_date?: string };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from('expense')
       .update(patch)
       .eq('id', id)
@@ -86,13 +98,17 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+
   try {
     const { searchParams } = new URL(request.url);
     const idParam = searchParams.get('id');
     const id = idParam ? Number(idParam) : NaN;
     if (!Number.isFinite(id)) return NextResponse.json({ error: 'id が必要です' }, { status: 400 });
 
-    const { error } = await supabaseAdmin.from('expense').delete().eq('id', id);
+    const { error } = await supabase.from('expense').delete().eq('id', id);
     if (error) throw error;
 
     return NextResponse.json({ message: '削除OK' }, { status: 200 });

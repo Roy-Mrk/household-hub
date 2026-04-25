@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServerClient";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 function formatAmount(amount) {
   return new Intl.NumberFormat('ja-JP').format(amount);
@@ -26,10 +25,10 @@ export default async function Home() {
     : `${year}-${String(now.getMonth() + 2).padStart(2, '0')}-01`;
 
   const [incomeRes, expenseRes, recentIncomeRes, recentExpenseRes] = await Promise.all([
-    supabaseAdmin.from('income').select('amount').gte('entry_date', fromDate).lt('entry_date', toDate),
-    supabaseAdmin.from('expense').select('amount').gte('entry_date', fromDate).lt('entry_date', toDate),
-    supabaseAdmin.from('income').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
-    supabaseAdmin.from('expense').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
+    supabase.from('income').select('amount').gte('entry_date', fromDate).lt('entry_date', toDate),
+    supabase.from('expense').select('amount').gte('entry_date', fromDate).lt('entry_date', toDate),
+    supabase.from('income').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
+    supabase.from('expense').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
   ]);
 
   const totalIncome = (incomeRes.data ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
