@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { readApiError } from '@/lib/ui/readApiError';
 import EditEntryModal from '@/components/EditEntryModal';
 
@@ -130,6 +131,7 @@ export default function ExpensePage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
+      <Link href="/" className="inline-block mb-4 text-sm text-gray-400 hover:text-white">← ホームに戻る</Link>
       <h1 className="text-2xl font-bold mb-4">支出</h1>
 
       {/* 新規追加ボタン */}
