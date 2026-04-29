@@ -10,7 +10,8 @@
     "clean": "rm -rf .next node_modules package-lock.json",
     "debug": "NODE_OPTIONS='--inspect' next dev",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:rls": "bash supabase/tests/rls_check.sh"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

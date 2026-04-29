@@ -53,9 +53,15 @@ export async function POST(request: Request) {
     }
     const { source, amount, category, entry_date } = parsed.data as { source: string; amount: number; category: string; entry_date: string };
 
+    const { data: membership } = await supabase
+      .from('household_members')
+      .select('household_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
     const { data, error } = await supabase
       .from('expense')
-      .insert([{ source, amount, category, entry_date, user_id: user.id }])
+      .insert([{ source, amount, category, entry_date, user_id: user.id, household_id: membership?.household_id ?? null }])
       .select();
 
     if (error) throw error;

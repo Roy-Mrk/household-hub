@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  let user = null;
+  let user: import('@supabase/supabase-js').User | null = null;
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;

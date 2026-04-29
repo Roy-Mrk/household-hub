@@ -9,7 +9,7 @@ import { readApiError } from '@/lib/ui/readApiError';
 import type { Database } from '@/types/database.types';
 type IncomeRow = Database['public']['Tables']['income']['Row'];
 type IncomeInsert = Database['public']['Tables']['income']['Insert'];
-export default function IncomePage(): JSX.Element {
+export default function IncomePage() {
   const [amount, setAmount] = useState<string>('');
   const [source, setSource] = useState<string>('');
   const [incomes, setIncomes] = useState<IncomeRow[]>([]);
