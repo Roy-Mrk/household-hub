@@ -29,16 +29,29 @@ export async function GET() {
       .select('user_id, role, joined_at')
       .eq('household_id', membership.household_id);
 
-    // メンバーのメールアドレスを管理クライアントで取得
-    const membersWithEmail = await Promise.all(
+    // メンバーの表示名をprofilesから取得（メールはフォールバック用にadminで取得）
+    const memberUserIds = (members ?? []).map(m => m.user_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, display_name')
+      .in('user_id', memberUserIds);
+
+    const profileMap = Object.fromEntries(
+      (profiles ?? []).map(p => [p.user_id, p.display_name])
+    );
+
+    const membersWithName = await Promise.all(
       (members ?? []).map(async (m) => {
+        const displayName = profileMap[m.user_id];
+        if (displayName) return { ...m, display_name: displayName };
+        // プロフィール未設定の場合はメールアドレスをフォールバック
         const { data: { user: u } } = await supabaseAdmin.auth.admin.getUserById(m.user_id);
-        return { ...m, email: u?.email ?? '' };
+        return { ...m, display_name: u?.email ?? '' };
       })
     );
 
     return NextResponse.json({
-      household: { ...household, role: membership.role, members: membersWithEmail },
+      household: { ...household, role: membership.role, members: membersWithName },
     }, { status: 200 });
   } catch (e) {
     console.error('GET households error:', e);

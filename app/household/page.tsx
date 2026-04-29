@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 type Member = {
   user_id: string;
-  email: string;
+  display_name: string;
   role: 'owner' | 'member';
   joined_at: string;
 };
@@ -168,7 +168,7 @@ export default function HouseholdPage() {
               <ul className="flex flex-col gap-2">
                 {household.members.map((m) => (
                   <li key={m.user_id} className="flex items-center justify-between bg-gray-700 rounded-lg px-4 py-3">
-                    <span className="text-sm">{m.email}</span>
+                    <span className="text-sm">{m.display_name}</span>
                     <span className="text-xs text-gray-400">
                       {m.role === 'owner' ? 'オーナー' : 'メンバー'}
                     </span>
