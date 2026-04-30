@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [errMsg, setErrMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,7 +47,15 @@ export default function LoginPage() {
         router.push('/');
         router.refresh();
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
+        if (!displayName.trim()) {
+          setErrMsg('表示名を入力してください');
+          return;
+        }
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { display_name: displayName.trim() } },
+        });
         if (error) {
           setErrMsg(error.message);
           return;
@@ -107,6 +116,16 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {mode === 'signup' && (
+            <input
+              type="text"
+              placeholder="表示名（50文字以内）"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={50}
+              className="p-3 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            />
+          )}
           <input
             type="email"
             placeholder="メールアドレス"

@@ -81,6 +81,26 @@ export default async function Home() {
             <p className="text-xs text-gray-400">日々の出費を記録</p>
           </div>
         </Link>
+        <Link
+          href="/household"
+          className="bg-gray-800 rounded-xl p-4 flex items-center gap-3 hover:bg-gray-700 transition-colors"
+        >
+          <span className="text-2xl">🏠</span>
+          <div>
+            <p className="font-semibold">世帯管理</p>
+            <p className="text-xs text-gray-400">家族・パートナーと家計を共有</p>
+          </div>
+        </Link>
+        <Link
+          href="/settings"
+          className="bg-gray-800 rounded-xl p-4 flex items-center gap-3 hover:bg-gray-700 transition-colors"
+        >
+          <span className="text-2xl">⚙️</span>
+          <div>
+            <p className="font-semibold">設定</p>
+            <p className="text-xs text-gray-400">表示名を変更</p>
+          </div>
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

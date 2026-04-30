@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev       # Start dev server with Turbopack
 npm run build     # Production build
 npm run lint      # Run ESLint
+npm run test      # Unit tests (Vitest)
+npm run test:rls  # RLS policy verification against local DB (requires supabase local running)
 npm run clean     # Remove .next, node_modules, package-lock.json
 npm run debug     # Start dev server with Node.js inspector
 ```

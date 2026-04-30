@@ -99,10 +99,13 @@ describe('POST /api/expense', () => {
     mockGetUser.mockResolvedValue({ data: { user: TEST_USER } });
   });
 
-  it('有効なデータで支出を作成できる', async () => {
-    const newRow = { id: 1, source: '食費', amount: 5000, category: '食費', entry_date: '2026-04-01', user_id: TEST_USER.id };
-    const q = makeQueryMock({ data: [newRow], error: null });
-    mockFrom.mockReturnValue(q);
+  it('世帯未所属の場合 household_id: null で支出を作成できる', async () => {
+    const newRow = { id: 1, source: '食費', amount: 5000, category: '食費', entry_date: '2026-04-01', user_id: TEST_USER.id, household_id: null };
+    const membershipQ = makeQueryMock({ data: null, error: null });
+    const insertQ = makeQueryMock({ data: [newRow], error: null });
+    mockFrom
+      .mockImplementationOnce(() => membershipQ)
+      .mockImplementationOnce(() => insertQ);
 
     const req = new Request('http://localhost/api/expense', {
       method: 'POST',
@@ -111,8 +114,28 @@ describe('POST /api/expense', () => {
     const res = await POST(req);
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ message: '作成OK' });
-    expect(q.insert).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.objectContaining({ user_id: TEST_USER.id })])
+    expect(insertQ.insert).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ user_id: TEST_USER.id, household_id: null })])
+    );
+  });
+
+  it('世帯所属中は household_id が自動付与される', async () => {
+    const HOUSEHOLD_ID = 'hh-uuid-456';
+    const newRow = { id: 1, source: '食費', amount: 5000, category: '食費', entry_date: '2026-04-01', user_id: TEST_USER.id, household_id: HOUSEHOLD_ID };
+    const membershipQ = makeQueryMock({ data: { household_id: HOUSEHOLD_ID }, error: null });
+    const insertQ = makeQueryMock({ data: [newRow], error: null });
+    mockFrom
+      .mockImplementationOnce(() => membershipQ)
+      .mockImplementationOnce(() => insertQ);
+
+    const req = new Request('http://localhost/api/expense', {
+      method: 'POST',
+      body: JSON.stringify({ source: '食費', amount: 5000, category: '食費', entry_date: '2026-04-01' }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(insertQ.insert).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ household_id: HOUSEHOLD_ID })])
     );
   });
 
