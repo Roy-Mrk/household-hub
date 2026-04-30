@@ -84,21 +84,19 @@ describe('GET /api/households', () => {
     const household = { id: HOUSEHOLD_ID, name: '田中家', created_by: TEST_USER.id, created_at: '2026-04-26T00:00:00Z' };
     const members = [{ user_id: TEST_USER.id, role: 'owner', joined_at: '2026-04-26T00:00:00Z' }];
 
+    const profiles = [{ user_id: TEST_USER.id, display_name: 'テスト太郎' }];
     mockFrom
       .mockImplementationOnce(() => makeQueryMock({ data: membership, error: null }))
       .mockImplementationOnce(() => makeQueryMock({ data: household, error: null }))
-      .mockImplementationOnce(() => makeQueryMock({ data: members, error: null }));
-
-    vi.mocked(supabaseAdmin.auth.admin.getUserById).mockResolvedValue(
-      { data: { user: { email: TEST_USER.email } } } as never
-    );
+      .mockImplementationOnce(() => makeQueryMock({ data: members, error: null }))
+      .mockImplementationOnce(() => makeQueryMock({ data: profiles, error: null }));
 
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.household).toMatchObject({ id: HOUSEHOLD_ID, name: '田中家', role: 'owner' });
     expect(body.household.members).toHaveLength(1);
-    expect(body.household.members[0]).toMatchObject({ email: TEST_USER.email, role: 'owner' });
+    expect(body.household.members[0]).toMatchObject({ display_name: 'テスト太郎', role: 'owner' });
   });
 });
 

@@ -14,6 +14,7 @@ export function makeQueryMock(result: object) {
   q.select = vi.fn(chain);
   q.insert = vi.fn(chain);
   q.update = vi.fn(chain);
+  q.upsert = vi.fn(chain);
   q.delete = vi.fn(chain);
   q.ilike = vi.fn(chain);
   q.gte = vi.fn(chain);
@@ -21,6 +22,8 @@ export function makeQueryMock(result: object) {
   q.order = vi.fn(chain);
   q.range = vi.fn(() => Promise.resolve(result));
   q.eq = vi.fn(chain);
+  q.neq = vi.fn(chain);
+  q.in = vi.fn(chain);
   q.maybeSingle = vi.fn(() => Promise.resolve(result));
   q.single = vi.fn(() => Promise.resolve(result));
   return q;

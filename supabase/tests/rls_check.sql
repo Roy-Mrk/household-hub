@@ -108,4 +108,67 @@ BEGIN
 END;
 $$;
 
+-- ─── profiles RLS 検証 ───────────────────────────────────────────────────────
+
+-- プロフィールデータを postgres 権限で挿入（RESET ROLE は DO ブロック外で実行）
+RESET ROLE;
+
+-- handle_new_user トリガーが auth.users INSERT 時に自動生成するため UPDATE で上書き
+UPDATE public.profiles SET display_name = 'オーナー太郎'
+WHERE user_id = '11111111-1111-1111-1111-111111111111'::uuid;
+UPDATE public.profiles SET display_name = 'メンバー花子'
+WHERE user_id = '22222222-2222-2222-2222-222222222222'::uuid;
+
+SET LOCAL ROLE authenticated;
+
+DO $$
+DECLARE cnt int;
+BEGIN
+  -- handle_new_user トリガーが3ユーザー全員のプロフィールを自動作成済み
+  -- 認証済みユーザーは全プロフィールを参照できる（世帯メンバー表示用）
+  PERFORM set_config('request.jwt.claims',
+    '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
+
+  -- テストユーザー3件が参照できることを確認（既存ユーザーの行は除外）
+  SELECT count(*) INTO cnt FROM public.profiles
+  WHERE user_id IN (
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    '22222222-2222-2222-2222-222222222222'::uuid,
+    '33333333-3333-3333-3333-333333333333'::uuid
+  );
+  ASSERT cnt = 3, format('[FAIL] 認証済みユーザーのプロフィール参照: 期待 3, 実際 %s', cnt);
+  RAISE NOTICE '[PASS] 認証済みユーザーはテストユーザーのプロフィールを参照できる（%件）', cnt;
+
+  -- 自分のプロフィールは更新できる（トリガーで作成済みなので UPDATE）
+  UPDATE public.profiles SET display_name = '部外者次郎'
+  WHERE user_id = '33333333-3333-3333-3333-333333333333'::uuid;
+  SELECT count(*) INTO cnt FROM public.profiles
+  WHERE user_id = '33333333-3333-3333-3333-333333333333'::uuid
+    AND display_name = '部外者次郎';
+  ASSERT cnt = 1, '[FAIL] 自分のプロフィール更新ができなかった';
+  RAISE NOTICE '[PASS] 自分のプロフィールを更新できる';
+
+  -- 他人のプロフィールは更新できない（RLS は 0件更新で弾く）
+  UPDATE public.profiles SET display_name = '書き換え'
+  WHERE user_id = '11111111-1111-1111-1111-111111111111'::uuid;
+  SELECT count(*) INTO cnt FROM public.profiles
+  WHERE user_id = '11111111-1111-1111-1111-111111111111'::uuid
+    AND display_name = '書き換え';
+  ASSERT cnt = 0, '[FAIL] 他人のプロフィールが書き換えられてしまった';
+  RAISE NOTICE '[PASS] 他人のプロフィールは更新できない（0件更新）';
+
+  -- オーナーも自分のプロフィールを更新できる
+  PERFORM set_config('request.jwt.claims',
+    '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+
+  UPDATE public.profiles SET display_name = 'オーナー更新'
+  WHERE user_id = '11111111-1111-1111-1111-111111111111'::uuid;
+  SELECT count(*) INTO cnt FROM public.profiles
+  WHERE user_id = '11111111-1111-1111-1111-111111111111'::uuid
+    AND display_name = 'オーナー更新';
+  ASSERT cnt = 1, format('[FAIL] オーナーのプロフィール更新失敗: %s件', cnt);
+  RAISE NOTICE '[PASS] オーナーも自分のプロフィールを更新できる';
+END;
+$$;
+
 ROLLBACK;
