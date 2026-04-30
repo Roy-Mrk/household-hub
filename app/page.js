@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { createSupabaseServerClient } from "@/lib/supabaseServerClient";
+import MonthNav from "@/components/MonthNav";
 
 function formatAmount(amount) {
   return new Intl.NumberFormat('ja-JP').format(amount);
@@ -11,22 +13,28 @@ function formatDate(dateStr) {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-export default async function Home() {
+function currentYYYYMM() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export default async function Home({ searchParams }) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const fromDate = `${year}-${month}-01`;
-  const toDate = now.getMonth() === 11
-    ? `${year + 1}-01-01`
-    : `${year}-${String(now.getMonth() + 2).padStart(2, '0')}-01`;
+  const params = await searchParams;
+  const month = (typeof params?.month === 'string' && /^\d{4}-\d{2}$/.test(params.month))
+    ? params.month
+    : currentYYYYMM();
+
+  const [year, monthNum] = month.split('-').map(Number);
+  const fromDate = `${year}-${String(monthNum).padStart(2, '0')}-01`;
+  const nextMonth = monthNum === 12 ? `${year + 1}-01-01` : `${year}-${String(monthNum + 1).padStart(2, '0')}-01`;
 
   const [incomeRes, expenseRes, recentIncomeRes, recentExpenseRes] = await Promise.all([
-    supabase.from('income').select('amount').gte('entry_date', fromDate).lt('entry_date', toDate),
-    supabase.from('expense').select('amount').gte('entry_date', fromDate).lt('entry_date', toDate),
+    supabase.from('income').select('amount').gte('entry_date', fromDate).lt('entry_date', nextMonth),
+    supabase.from('expense').select('amount').gte('entry_date', fromDate).lt('entry_date', nextMonth),
     supabase.from('income').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
     supabase.from('expense').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
   ]);
@@ -40,8 +48,15 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-1">household hub</h1>
-      <p className="text-gray-400 text-sm mb-6">{year}年{Number(month)}月の収支</p>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold">household hub</h1>
+      </div>
+
+      <div className="flex items-center justify-between mb-6">
+        <Suspense fallback={<div className="h-8" />}>
+          <MonthNav month={month} />
+        </Suspense>
+      </div>
 
       <div className="grid grid-cols-3 gap-3 mb-8">
         <div className="bg-gray-800 rounded-xl p-4">
