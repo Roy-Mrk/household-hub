@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createSupabaseServerClient } from "@/lib/supabaseServerClient";
 import MonthNav from "@/components/MonthNav";
+import CategoryPieChart from "@/components/CategoryPieChart";
 import { parseMonth, monthToRange } from "@/lib/monthUtils";
 
 function formatAmount(amount) {
@@ -26,11 +27,13 @@ export default async function Home({ searchParams }) {
   const nextMonthStr = new Date(nextMonth).toISOString().slice(0, 10);
   const [year, monthNum] = month.split('-').map(Number);
 
-  const [incomeRes, expenseRes, recentIncomeRes, recentExpenseRes] = await Promise.all([
+  const [incomeRes, expenseRes, recentIncomeRes, recentExpenseRes, incomeCatRes, expenseCatRes] = await Promise.all([
     supabase.from('income').select('amount').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
     supabase.from('expense').select('amount').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
     supabase.from('income').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
     supabase.from('expense').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
+    supabase.from('income').select('category, amount').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
+    supabase.from('expense').select('category, amount').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
   ]);
 
   const totalIncome = (incomeRes.data ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
@@ -39,6 +42,20 @@ export default async function Home({ searchParams }) {
 
   const recentIncome = recentIncomeRes.data ?? [];
   const recentExpense = recentExpenseRes.data ?? [];
+
+  // カテゴリ別集計
+  const aggregateByCategory = (rows) => {
+    const map = {};
+    for (const r of rows ?? []) {
+      const cat = r.category || 'その他';
+      map[cat] = (map[cat] ?? 0) + Number(r.amount);
+    }
+    return Object.entries(map)
+      .map(([category, amount]) => ({ category, amount }))
+      .sort((a, b) => b.amount - a.amount);
+  };
+  const incomeByCategory = aggregateByCategory(incomeCatRes.data);
+  const expenseByCategory = aggregateByCategory(expenseCatRes.data);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6 max-w-2xl mx-auto">
@@ -149,6 +166,12 @@ export default async function Home({ searchParams }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* カテゴリ別円グラフ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <CategoryPieChart data={expenseByCategory} title="支出カテゴリ別" />
+        <CategoryPieChart data={incomeByCategory} title="収入カテゴリ別" />
       </div>
     </div>
   );
