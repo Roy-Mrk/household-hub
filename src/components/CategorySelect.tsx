@@ -32,16 +32,7 @@ export default function CategorySelect({ type, value, onChange }: Props) {
   useEffect(() => {
     fetch(`/api/categories?type=${type}`)
       .then(r => r.json())
-      .then(({ categories: cats }) => {
-        setCategories(cats ?? []);
-        // value から初期の selectedCatId を逆引き
-        if (value) {
-          const cat = (cats ?? []).find((c: Category) =>
-            c.subcategories.some((s: Subcategory) => s.id === value)
-          );
-          if (cat) setSelectedCatId(cat.id);
-        }
-      })
+      .then(({ categories: cats }) => { setCategories(cats ?? []); })
       .finally(() => setLoading(false));
   }, [type]);
 
