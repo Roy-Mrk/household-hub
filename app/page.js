@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createSupabaseServerClient } from "@/lib/supabaseServerClient";
 import MonthNav from "@/components/MonthNav";
+import { parseMonth, monthToRange } from "@/lib/monthUtils";
 
 function formatAmount(amount) {
   return new Intl.NumberFormat('ja-JP').format(amount);
@@ -13,28 +14,21 @@ function formatDate(dateStr) {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-function currentYYYYMM() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
-
 export default async function Home({ searchParams }) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
   const params = await searchParams;
-  const month = (typeof params?.month === 'string' && /^\d{4}-\d{2}$/.test(params.month))
-    ? params.month
-    : currentYYYYMM();
-
+  const month = parseMonth(params?.month);
+  const { from: fromDate, to: toDate } = monthToRange(month);
+  const nextMonth = new Date(toDate).getTime() + 86400000; // toDate の翌日
+  const nextMonthStr = new Date(nextMonth).toISOString().slice(0, 10);
   const [year, monthNum] = month.split('-').map(Number);
-  const fromDate = `${year}-${String(monthNum).padStart(2, '0')}-01`;
-  const nextMonth = monthNum === 12 ? `${year + 1}-01-01` : `${year}-${String(monthNum + 1).padStart(2, '0')}-01`;
 
   const [incomeRes, expenseRes, recentIncomeRes, recentExpenseRes] = await Promise.all([
-    supabase.from('income').select('amount').gte('entry_date', fromDate).lt('entry_date', nextMonth),
-    supabase.from('expense').select('amount').gte('entry_date', fromDate).lt('entry_date', nextMonth),
+    supabase.from('income').select('amount').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
+    supabase.from('expense').select('amount').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
     supabase.from('income').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
     supabase.from('expense').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
   ]);

@@ -1,21 +1,26 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import EditEntryModal from '@/components/EditEntryModal';
+import MonthNav from '@/components/MonthNav';
 import { readApiError } from '@/lib/ui/readApiError';
+import { parseMonth, monthToRange } from '@/lib/monthUtils';
 
 // 型定義
 import type { Database } from '@/types/database.types';
 type IncomeRow = Database['public']['Tables']['income']['Row'];
 type IncomeInsert = Database['public']['Tables']['income']['Insert'];
 export default function IncomePage() {
+  const searchParams = useSearchParams();
+  const month = parseMonth(searchParams?.get('month'));
+  const { from, to } = monthToRange(month);
+
   const [amount, setAmount] = useState<string>('');
   const [source, setSource] = useState<string>('');
   const [incomes, setIncomes] = useState<IncomeRow[]>([]);
   const [filter, setFilter] = useState<string>('');
-  const [from, setFrom] = useState<string>(''); // YYYY-MM-DD
-  const [to, setTo] = useState<string>(''); // YYYY-MM-DD
   const [loading, setLoading] = useState<boolean>(true);
   const [errMsg, setErrMsg] = useState<string>('');
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -61,7 +66,7 @@ export default function IncomePage() {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, from, to, offset]);
+  }, [q, month, offset]);
 
   const resetForm = (): void => {
     setAmount('');
@@ -149,18 +154,6 @@ export default function IncomePage() {
     }, 0);
   }, [incomes]);
 
-  // 月範囲をワンタップで入れる補助（今月）
-  const setThisMonth = (): void => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = d.getMonth();
-    const first = new Date(y, m, 1);
-    const last = new Date(y, m + 1, 0);
-    const fmt = (dt: Date) => dt.toISOString().slice(0, 10);
-    setFrom(fmt(first));
-    setTo(fmt(last));
-    setOffset(0);
-  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
@@ -182,53 +175,21 @@ export default function IncomePage() {
         </button>
       </div>
 
-      {/* フィルタ＆ヘッダ */}
-      <div className="mb-4 flex flex-col md:flex-row gap-3 items-start md:items-end">
-        <div className="flex flex-col">
-          <label className="text-sm mb-1">内容</label>
-          <input
-            type="text"
-            placeholder="内容を検索"
-            value={filter}
-            onChange={(e) => {
-              setFilter(e.target.value);
-              setOffset(0);
-            }}
-            className="p-2 border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400"
-          />
-        </div>
-        <div className="flex items-end gap-2">
-          <div className="flex flex-col">
-            <label className="text-sm mb-1">From</label>
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => {
-                setFrom(e.target.value);
-                setOffset(0);
-              }}
-              className="p-2 border border-gray-600 rounded bg-gray-800 text-white"
-            />
+      {/* 月切り替え＆フィルタ */}
+      <div className="mb-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <MonthNav month={month} />
+          <div className="text-sm text-gray-400">
+            {totalCount.toLocaleString()} 件 / 合計 {total.toLocaleString()} 円
           </div>
-          <div className="flex flex-col">
-            <label className="text-sm mb-1">To</label>
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => {
-                setTo(e.target.value);
-                setOffset(0);
-              }}
-              className="p-2 border border-gray-600 rounded bg-gray-800 text-white"
-            />
-          </div>
-          <button type="button" onClick={setThisMonth} className="h-10 px-3 bg-gray-700 rounded hover:bg-gray-600">
-            今月
-          </button>
         </div>
-        <div className="ml-auto">
-          <div className="text-sm text-gray-400">件数: {totalCount.toLocaleString()} / 合計: {total.toLocaleString()} 円</div>
-        </div>
+        <input
+          type="text"
+          placeholder="内容を検索"
+          value={filter}
+          onChange={(e) => { setFilter(e.target.value); setOffset(0); }}
+          className="p-2 border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400 max-w-xs"
+        />
       </div>
 
       {/* 一覧 */}
