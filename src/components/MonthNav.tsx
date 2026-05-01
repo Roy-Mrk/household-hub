@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 function addMonths(yyyyMM: string, delta: number): string {
   const [y, m] = yyyyMM.split('-').map(Number);
@@ -24,12 +24,13 @@ type Props = { month: string };
 
 export default function MonthNav({ month }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const go = (m: string) => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
     params.set('month', m);
-    router.push(`/?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   const [year, monthNum] = month.split('-').map(Number);
