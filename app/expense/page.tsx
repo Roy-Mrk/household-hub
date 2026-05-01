@@ -65,13 +65,13 @@ export default function ExpensePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, month, offset]);
 
-  const handleSave = async (payload: { id?: number; source: string; amount: number; category: string; entry_date: string }) => {
+  const handleSave = async (payload: { id?: number; source: string; amount: number; subcategory_id: string; entry_date: string }) => {
     try {
       const method = payload.id ? 'PATCH' : 'POST';
       const body = JSON.stringify(
         payload.id
           ? payload
-          : { source: payload.source, amount: payload.amount, category: payload.category, entry_date: payload.entry_date }
+          : { source: payload.source, amount: payload.amount, subcategory_id: payload.subcategory_id, entry_date: payload.entry_date }
       );
       const res = await fetch('/api/expense', {
         method,
@@ -175,7 +175,7 @@ export default function ExpensePage() {
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="font-bold text-lg text-white">{row?.source ?? '(無題)'}</h3>
-                    <p className="text-sm text-gray-400">カテゴリ: {row.category ?? '—'}</p>
+                    <p className="text-sm text-gray-400">カテゴリ: {(row as { subcategory_name?: string }).subcategory_name ?? '—'}</p>
                     <p className="text-sm text-gray-400">日付: {entryDate}</p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -217,7 +217,8 @@ export default function ExpensePage() {
       <EditEntryModal
         open={modalOpen}
         title={editItem ? '支出を編集' : '支出を追加'}
-        initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount, category: editItem.category ?? '', entry_date: editItem.entry_date ?? '' } : null}
+        type="expense"
+        initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount, subcategory_id: (editItem as { subcategory_id?: string }).subcategory_id ?? '', entry_date: editItem.entry_date ?? '' } : null}
         onClose={() => {
           setModalOpen(false);
           setEditItem(null);

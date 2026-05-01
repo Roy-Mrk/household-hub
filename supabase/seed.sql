@@ -4,7 +4,6 @@
 -- ============================================================
 
 -- デモユーザーを auth.users に挿入
--- handle_new_user トリガーが profiles も自動作成する
 INSERT INTO auth.users (
   id, email, encrypted_password, email_confirmed_at,
   created_at, updated_at, aud, role,
@@ -20,62 +19,72 @@ VALUES (
   '{"display_name":"デモユーザー"}'
 ) ON CONFLICT (id) DO NOTHING;
 
--- ─── 収入データ（3ヶ月分） ────────────────────────────────────────────────────
-INSERT INTO public.income (source, amount, category, entry_date, user_id) VALUES
+-- ─── 収入データ（subcategory_id をサブカテゴリ名で逆引き） ──────────────────
+insert into public.income (source, amount, subcategory_id, entry_date, user_id)
+select s.source, s.amount, sub.id, s.entry_date, 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'::uuid
+from (values
   -- 2026年3月
-  ('月給（3月分）',    320000, '給与',   '2026-03-25', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('フリーランス案件', 85000,  '副業',   '2026-03-15', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('メルカリ売上',     12000,  'その他', '2026-03-10', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
+  ('月給（3月分）',    320000, '給与',     '給与・賞与', '2026-03-25'),
+  ('フリーランス案件', 85000,  '副業収入', '事業・副業', '2026-03-15'),
+  ('メルカリ売上',     12000,  'その他',   'その他収入', '2026-03-10'),
   -- 2026年4月
-  ('月給（4月分）',    320000, '給与',   '2026-04-25', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('フリーランス案件', 120000, '副業',   '2026-04-18', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('春季賞与',         180000, '賞与',   '2026-04-10', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('メルカリ売上',     8500,   'その他', '2026-04-05', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
+  ('月給（4月分）',    320000, '給与',     '給与・賞与', '2026-04-25'),
+  ('フリーランス案件', 120000, '副業収入', '事業・副業', '2026-04-18'),
+  ('春季賞与',         180000, '賞与',     '給与・賞与', '2026-04-10'),
+  ('メルカリ売上',     8500,   'その他',   'その他収入', '2026-04-05'),
   -- 2026年5月
-  ('月給（5月分）',    320000, '給与',   '2026-05-25', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('フリーランス案件', 95000,  '副業',   '2026-05-12', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+  ('月給（5月分）',    320000, '給与',     '給与・賞与', '2026-05-25'),
+  ('フリーランス案件', 95000,  '副業収入', '事業・副業', '2026-05-12')
+) as s(source, amount, sub_name, cat_name, entry_date)
+join public.subcategories sub on sub.name = s.sub_name and sub.user_id is null
+join public.categories cat on cat.id = sub.category_id and cat.name = s.cat_name and cat.user_id is null;
 
--- ─── 支出データ（3ヶ月分） ────────────────────────────────────────────────────
-INSERT INTO public.expense (source, amount, category, entry_date, user_id) VALUES
+-- ─── 支出データ ───────────────────────────────────────────────────────────────
+insert into public.expense (source, amount, subcategory_id, entry_date, user_id)
+select s.source, s.amount, sub.id, s.entry_date, 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'::uuid
+from (values
   -- 2026年3月
-  ('家賃',           95000, '住居費',  '2026-03-01', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週1）', 6800,  '食費',   '2026-03-03', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週2）', 7200,  '食費',   '2026-03-10', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週3）', 6500,  '食費',   '2026-03-17', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週4）', 7800,  '食費',   '2026-03-24', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('ランチ代',        4500,  '外食費', '2026-03-12', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('飲み会',          8000,  '外食費', '2026-03-20', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('電気代',          8200,  '光熱費', '2026-03-05', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('ガス代',          3800,  '光熱費', '2026-03-05', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('交通費（定期）',  12000, '交通費', '2026-03-01', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スマホ代',        5500,  '通信費', '2026-03-10', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('映画・配信',      3200,  '娯楽費', '2026-03-15', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('病院',            2800,  '医療費', '2026-03-22', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
+  ('家賃',           95000, '家賃',           '住宅',         '2026-03-01'),
+  ('スーパー（週1）', 6800, '食料品',         '食費',         '2026-03-03'),
+  ('スーパー（週2）', 7200, '食料品',         '食費',         '2026-03-10'),
+  ('スーパー（週3）', 6500, '食料品',         '食費',         '2026-03-17'),
+  ('スーパー（週4）', 7800, '食料品',         '食費',         '2026-03-24'),
+  ('ランチ代',        4500, '外食',           '食費',         '2026-03-12'),
+  ('飲み会',          8000, '外食',           '食費',         '2026-03-20'),
+  ('電気代',          8200, '電気代',         '水道・光熱費', '2026-03-05'),
+  ('ガス代',          3800, 'ガス代',         '水道・光熱費', '2026-03-05'),
+  ('交通費（定期）', 12000, '電車・バス',     '交通費',       '2026-03-01'),
+  ('スマホ代',        5500, '携帯電話',       '通信費',       '2026-03-10'),
+  ('映画・配信',      3200, '映画・音楽・ゲーム', '趣味・娯楽', '2026-03-15'),
+  ('病院',            2800, '病院',           '健康・医療',   '2026-03-22'),
   -- 2026年4月
-  ('家賃',           95000, '住居費',  '2026-04-01', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週1）', 7100,  '食費',   '2026-04-07', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週2）', 6900,  '食費',   '2026-04-14', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週3）', 8200,  '食費',   '2026-04-21', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週4）', 6600,  '食費',   '2026-04-28', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('花見',           15000, '外食費',  '2026-04-05', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('ランチ代',        5200,  '外食費', '2026-04-18', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('電気代',          7500,  '光熱費', '2026-04-05', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('ガス代',          3200,  '光熱費', '2026-04-05', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('交通費（定期）',  12000, '交通費', '2026-04-01', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スマホ代',        5500,  '通信費', '2026-04-10', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('春服',           22000, '衣服費',  '2026-04-12', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('映画・配信',      3200,  '娯楽費', '2026-04-15', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('ジム入会',        8000,  '娯楽費', '2026-04-20', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
+  ('家賃',           95000, '家賃',           '住宅',         '2026-04-01'),
+  ('スーパー（週1）', 7100, '食料品',         '食費',         '2026-04-07'),
+  ('スーパー（週2）', 6900, '食料品',         '食費',         '2026-04-14'),
+  ('スーパー（週3）', 8200, '食料品',         '食費',         '2026-04-21'),
+  ('スーパー（週4）', 6600, '食料品',         '食費',         '2026-04-28'),
+  ('花見',           15000, '外食',           '食費',         '2026-04-05'),
+  ('ランチ代',        5200, '外食',           '食費',         '2026-04-18'),
+  ('電気代',          7500, '電気代',         '水道・光熱費', '2026-04-05'),
+  ('ガス代',          3200, 'ガス代',         '水道・光熱費', '2026-04-05'),
+  ('交通費（定期）', 12000, '電車・バス',     '交通費',       '2026-04-01'),
+  ('スマホ代',        5500, '携帯電話',       '通信費',       '2026-04-10'),
+  ('春服',           22000, '衣類',           '衣服・美容',   '2026-04-12'),
+  ('映画・配信',      3200, '映画・音楽・ゲーム', '趣味・娯楽', '2026-04-15'),
+  ('ジム入会',        8000, 'フィットネス',   '健康・医療',   '2026-04-20'),
   -- 2026年5月
-  ('家賃',           95000, '住居費',  '2026-05-01', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週1）', 6700,  '食費',   '2026-05-05', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週2）', 7300,  '食費',   '2026-05-12', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週3）', 6900,  '食費',   '2026-05-19', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スーパー（週4）', 7500,  '食費',   '2026-05-26', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('GW旅行',         45000, '娯楽費',  '2026-05-03', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('ランチ代',        4800,  '外食費', '2026-05-14', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('電気代',          6800,  '光熱費', '2026-05-05', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('ガス代',          2900,  '光熱費', '2026-05-05', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('交通費（定期）',  12000, '交通費', '2026-05-01', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('スマホ代',        5500,  '通信費', '2026-05-10', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('映画・配信',      3200,  '娯楽費', '2026-05-15', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+  ('家賃',           95000, '家賃',           '住宅',         '2026-05-01'),
+  ('スーパー（週1）', 6700, '食料品',         '食費',         '2026-05-05'),
+  ('スーパー（週2）', 7300, '食料品',         '食費',         '2026-05-12'),
+  ('スーパー（週3）', 6900, '食料品',         '食費',         '2026-05-19'),
+  ('スーパー（週4）', 7500, '食料品',         '食費',         '2026-05-26'),
+  ('GW旅行',         45000, '旅行',           '趣味・娯楽',   '2026-05-03'),
+  ('ランチ代',        4800, '外食',           '食費',         '2026-05-14'),
+  ('電気代',          6800, '電気代',         '水道・光熱費', '2026-05-05'),
+  ('ガス代',          2900, 'ガス代',         '水道・光熱費', '2026-05-05'),
+  ('交通費（定期）', 12000, '電車・バス',     '交通費',       '2026-05-01'),
+  ('スマホ代',        5500, '携帯電話',       '通信費',       '2026-05-10'),
+  ('映画・配信',      3200, '映画・音楽・ゲーム', '趣味・娯楽', '2026-05-15')
+) as s(source, amount, sub_name, cat_name, entry_date)
+join public.subcategories sub on sub.name = s.sub_name and sub.user_id is null
+join public.categories cat on cat.id = sub.category_id and cat.name = s.cat_name and cat.user_id is null;
