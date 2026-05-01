@@ -11,7 +11,8 @@
     "debug": "NODE_OPTIONS='--inspect' next dev",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:rls": "bash supabase/tests/rls_check.sh"
+    "test:rls": "bash supabase/tests/rls_check.sh",
+    "prepare": "husky"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -31,6 +32,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
+    "husky": "^9.1.7",
     "postcss": "^8.4.49",
     "prisma": "^5.22.0",
     "supabase": "^2.34.3",
