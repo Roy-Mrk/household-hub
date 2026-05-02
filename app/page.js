@@ -32,8 +32,8 @@ export default async function Home({ searchParams }) {
     supabase.from('expense').select('amount').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
     supabase.from('income').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
     supabase.from('expense').select('id, source, amount, entry_date').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(5),
-    supabase.from('income').select('category, amount').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
-    supabase.from('expense').select('category, amount').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
+    supabase.from('income').select('amount, subcategory:subcategory_id(name, category:category_id(name))').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
+    supabase.from('expense').select('amount, subcategory:subcategory_id(name, category:category_id(name))').gte('entry_date', fromDate).lt('entry_date', nextMonthStr),
   ]);
 
   const totalIncome = (incomeRes.data ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
@@ -43,11 +43,11 @@ export default async function Home({ searchParams }) {
   const recentIncome = recentIncomeRes.data ?? [];
   const recentExpense = recentExpenseRes.data ?? [];
 
-  // カテゴリ別集計
+  // カテゴリ別集計（メインカテゴリ単位で集計）
   const aggregateByCategory = (rows) => {
     const map = {};
     for (const r of rows ?? []) {
-      const cat = r.category || 'その他';
+      const cat = r.subcategory?.category?.name ?? '未分類';
       map[cat] = (map[cat] ?? 0) + Number(r.amount);
     }
     return Object.entries(map)

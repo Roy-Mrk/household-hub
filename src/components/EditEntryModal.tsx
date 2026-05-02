@@ -57,7 +57,7 @@ export default function EditEntryModal({
     if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0) {
       setError?.('金額は0以上の整数で入力してください'); return;
     }
-    if (!subcategoryId) { setError?.('カテゴリを選択してください'); return; }
+
     if (!/^\d{4}-\d{2}-\d{2}$/.test(entryDate)) {
       setError?.('日付はYYYY-MM-DD形式で入力してください'); return;
     }
