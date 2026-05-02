@@ -14,6 +14,10 @@ vi.mock('@/lib/supabaseServerClient', () => ({
   ),
 }));
 
+vi.mock('@/lib/supabaseAdmin', () => ({
+  supabaseAdmin: { from: vi.fn(), auth: { admin: { getUserById: vi.fn() } } },
+}));
+
 vi.mock('next/headers', () => ({
   cookies: vi.fn(() => ({ get: vi.fn(), set: vi.fn(), delete: vi.fn() })),
 }));
