@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { sourceSchema, amountSchema, entryDateSchema } from './common';
 
-const subcategoryIdSchema = z.string().uuid({ message: 'カテゴリを選択してください' });
+const subcategoryIdSchema = z.string().uuid({ message: '無効なカテゴリIDです' });
+const optionalSubcategoryId = subcategoryIdSchema.optional().or(z.literal('').transform(() => undefined));
 
 export const IncomeCreateSchema = z.object({
   source: sourceSchema,
   amount: amountSchema,
-  subcategory_id: subcategoryIdSchema,
+  subcategory_id: optionalSubcategoryId,
   entry_date: entryDateSchema,
 });
 
@@ -15,7 +16,7 @@ export const IncomeUpdateSchema = z
     id: z.coerce.number().int().positive(),
     source: sourceSchema.optional(),
     amount: amountSchema.optional(),
-    subcategory_id: subcategoryIdSchema.optional(),
+    subcategory_id: optionalSubcategoryId,
     entry_date: entryDateSchema.optional(),
   })
   .refine(obj =>

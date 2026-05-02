@@ -175,7 +175,11 @@ export default function ExpensePage() {
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="font-bold text-lg text-white">{row?.source ?? '(無題)'}</h3>
-                    <p className="text-sm text-gray-400">カテゴリ: {(row as { subcategory_name?: string }).subcategory_name ?? '—'}</p>
+                    <p className="text-sm text-gray-400">カテゴリ: {(() => {
+                        type Sub = { name: string; category?: { name: string } | null } | null;
+                        const sub = (row as { subcategory?: Sub }).subcategory;
+                        return sub ? (sub.category ? `${sub.category.name} › ${sub.name}` : sub.name) : '未分類';
+                      })()}</p>
                     <p className="text-sm text-gray-400">日付: {entryDate}</p>
                   </div>
                   <div className="flex items-center gap-3">

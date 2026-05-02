@@ -10,7 +10,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   try {
     const params = parseListParams(new URL(req.url).searchParams);
-    let query = supabase.from('income').select('*', { count: 'exact' });
+    let query = supabase.from('income').select(
+      '*, subcategory:subcategory_id(name, category:category_id(name))',
+      { count: 'exact' }
+    );
 
     if (params.q)    query = query.ilike('source', `%${params.q}%`);
     if (params.from) query = query.gte('entry_date', params.from);
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'validation_error', issues: zodErrorToMessages(parsed.error) }, { status: 400 });
     }
-    const { source, amount, subcategory_id, entry_date } = parsed.data as { source: string; amount: number; subcategory_id: string; entry_date: string };
+    const { source, amount, subcategory_id, entry_date } = parsed.data;
 
     const { data: membership } = await supabase
       .from('household_members')
@@ -50,7 +53,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from('income')
-      .insert([{ source, amount, subcategory_id, entry_date, user_id: user.id, household_id: membership?.household_id ?? null }])
+      .insert([{ source, amount, subcategory_id: subcategory_id ?? null, entry_date, user_id: user.id, household_id: membership?.household_id ?? null }])
       .select();
 
     if (error) throw error;
@@ -72,7 +75,7 @@ export async function PATCH(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'validation_error', issues: zodErrorToMessages(parsed.error) }, { status: 400 });
     }
-    const { id, ...rest } = parsed.data as { id: number; source?: string; amount?: number; category?: string; entry_date?: string };
+    const { id, ...rest } = parsed.data;
 
     const { data, error } = await supabase.from('income').update(rest).eq('id', id).select();
     if (error) throw error;
@@ -101,4 +104,3 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: '削除に失敗しました' }, { status: 500 });
   }
 }
-
