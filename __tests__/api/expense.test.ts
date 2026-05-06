@@ -14,6 +14,10 @@ vi.mock('@/lib/supabaseServerClient', () => ({
   ),
 }));
 
+vi.mock('@/lib/supabaseAdmin', () => ({
+  supabaseAdmin: { from: vi.fn(), auth: { admin: { getUserById: vi.fn() } } },
+}));
+
 vi.mock('next/headers', () => ({
   cookies: vi.fn(() => ({ get: vi.fn(), set: vi.fn(), delete: vi.fn() })),
 }));
@@ -99,8 +103,10 @@ describe('POST /api/expense', () => {
     mockGetUser.mockResolvedValue({ data: { user: TEST_USER } });
   });
 
+  const SUBCATEGORY_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
   it('世帯未所属の場合 household_id: null で支出を作成できる', async () => {
-    const newRow = { id: 1, source: '食費', amount: 5000, category: '食費', entry_date: '2026-04-01', user_id: TEST_USER.id, household_id: null };
+    const newRow = { id: 1, source: '食費', amount: 5000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01', user_id: TEST_USER.id, household_id: null };
     const membershipQ = makeQueryMock({ data: null, error: null });
     const insertQ = makeQueryMock({ data: [newRow], error: null });
     mockFrom
@@ -109,7 +115,7 @@ describe('POST /api/expense', () => {
 
     const req = new Request('http://localhost/api/expense', {
       method: 'POST',
-      body: JSON.stringify({ source: '食費', amount: 5000, category: '食費', entry_date: '2026-04-01' }),
+      body: JSON.stringify({ source: '食費', amount: 5000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01' }),
     });
     const res = await POST(req);
     expect(res.status).toBe(200);
@@ -121,7 +127,7 @@ describe('POST /api/expense', () => {
 
   it('世帯所属中は household_id が自動付与される', async () => {
     const HOUSEHOLD_ID = 'hh-uuid-456';
-    const newRow = { id: 1, source: '食費', amount: 5000, category: '食費', entry_date: '2026-04-01', user_id: TEST_USER.id, household_id: HOUSEHOLD_ID };
+    const newRow = { id: 1, source: '食費', amount: 5000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01', user_id: TEST_USER.id, household_id: HOUSEHOLD_ID };
     const membershipQ = makeQueryMock({ data: { household_id: HOUSEHOLD_ID }, error: null });
     const insertQ = makeQueryMock({ data: [newRow], error: null });
     mockFrom
@@ -130,7 +136,7 @@ describe('POST /api/expense', () => {
 
     const req = new Request('http://localhost/api/expense', {
       method: 'POST',
-      body: JSON.stringify({ source: '食費', amount: 5000, category: '食費', entry_date: '2026-04-01' }),
+      body: JSON.stringify({ source: '食費', amount: 5000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01' }),
     });
     const res = await POST(req);
     expect(res.status).toBe(200);

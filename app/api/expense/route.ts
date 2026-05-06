@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { requireAuth, parseListParams } from '@/lib/apiHelpers';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { ExpenseCreateSchema, ExpenseUpdateSchema } from '@/lib/validation/expense';
 import { zodErrorToMessages } from '@/lib/validation/common';
 
@@ -11,7 +12,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const params = parseListParams(new URL(req.url).searchParams);
-    let query = supabase.from('expense').select('*', { count: 'exact' });
+    let query = supabase.from('expense').select(
+      '*, subcategory:subcategory_id(name, category:category_id(name))',
+      { count: 'exact' }
+    );
 
     if (params.q)    query = query.ilike('source', `%${params.q}%`);
     if (params.from) query = query.gte('entry_date', params.from);
@@ -44,7 +48,25 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const { source, amount, category, entry_date } = parsed.data as { source: string; amount: number; category: string; entry_date: string };
+    const { source, amount, entry_date } = parsed.data;
+    let { subcategory_id } = parsed.data;
+
+    // 未選択の場合はマスタの「未分類」（expense型）を自動セット
+    if (!subcategory_id) {
+      const { data: miscCat } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('name', '未分類').eq('type', 'expense').is('user_id', null)
+        .maybeSingle();
+      if (miscCat) {
+        const { data: miscSub } = await supabaseAdmin
+          .from('subcategories')
+          .select('id')
+          .eq('category_id', miscCat.id).eq('name', '未分類').is('user_id', null)
+          .maybeSingle();
+        subcategory_id = miscSub?.id ?? undefined;
+      }
+    }
 
     const { data: membership } = await supabase
       .from('household_members')
@@ -54,7 +76,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from('expense')
-      .insert([{ source, amount, category, entry_date, user_id: user.id, household_id: membership?.household_id ?? null }])
+      .insert([{ source, amount, subcategory_id: subcategory_id ?? null, entry_date, user_id: user.id, household_id: membership?.household_id ?? null }])
       .select();
 
     if (error) throw error;
@@ -79,7 +101,7 @@ export async function PATCH(request: Request) {
         { status: 400 }
       );
     }
-    const { id, ...patch } = parsed.data as { id: number; source?: string; amount?: number; category?: string; entry_date?: string };
+    const { id, ...patch } = parsed.data;
 
     const { data, error } = await supabase.from('expense').update(patch).eq('id', id).select();
     if (error) throw error;
