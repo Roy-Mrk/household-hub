@@ -65,13 +65,13 @@ export default function ExpensePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, month, offset]);
 
-  const handleSave = async (payload: { id?: number; source: string; amount: number; subcategory_id: string; entry_date: string }) => {
+  const handleSave = async (payload: { id?: number; source: string; amount: number; subcategory_id: string; entry_date: string; owner: 'self' | 'shared' }) => {
     try {
       const method = payload.id ? 'PATCH' : 'POST';
       const body = JSON.stringify(
         payload.id
           ? payload
-          : { source: payload.source, amount: payload.amount, subcategory_id: payload.subcategory_id, entry_date: payload.entry_date }
+          : { source: payload.source, amount: payload.amount, subcategory_id: payload.subcategory_id, entry_date: payload.entry_date, owner: payload.owner }
       );
       const res = await fetch('/api/expense', {
         method,
@@ -181,6 +181,13 @@ export default function ExpensePage() {
                         return sub ? (sub.category ? `${sub.category.name} › ${sub.name}` : sub.name) : '未分類';
                       })()}</p>
                     <p className="text-sm text-gray-400">日付: {entryDate}</p>
+                    <span className={`inline-block mt-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                      (row as { owner?: string }).owner === 'shared'
+                        ? 'bg-purple-800 text-purple-200'
+                        : 'bg-gray-700 text-gray-300'
+                    }`}>
+                      {(row as { owner?: string }).owner === 'shared' ? '家族共有' : '自分'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <p className="text-white text-xl font-semibold">
@@ -222,7 +229,7 @@ export default function ExpensePage() {
         open={modalOpen}
         title={editItem ? '支出を編集' : '支出を追加'}
         type="expense"
-        initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount, subcategory_id: (editItem as { subcategory_id?: string }).subcategory_id ?? '', entry_date: editItem.entry_date ?? '' } : null}
+        initial={editItem ? { id: editItem.id, source: editItem.source, amount: editItem.amount, subcategory_id: (editItem as { subcategory_id?: string }).subcategory_id ?? '', entry_date: editItem.entry_date ?? '', owner: ((editItem as { owner?: string }).owner === 'shared' ? 'shared' : 'self') } : null}
         onClose={() => {
           setModalOpen(false);
           setEditItem(null);

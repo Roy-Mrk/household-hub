@@ -4,12 +4,17 @@ import { useEffect, useState } from 'react';
 import Modal from './Modal';
 import CategorySelect from './CategorySelect';
 
+const OWNER_STORAGE_KEY = 'lastSelectedOwner';
+
+export type Owner = 'self' | 'shared';
+
 export type EditEntry = {
   id: number;
   source: string | null;
   amount: number | string;
   subcategory_id?: string | null;
   entry_date?: string | null;
+  owner?: Owner | null;
 };
 
 type Props = {
@@ -18,10 +23,18 @@ type Props = {
   type: 'income' | 'expense';
   initial: EditEntry | null;
   onClose: () => void;
-  onSave: (payload: { id?: number; source: string; amount: number; subcategory_id: string; entry_date: string }) => Promise<void>;
+  onSave: (payload: { id?: number; source: string; amount: number; subcategory_id: string; entry_date: string; owner: Owner }) => Promise<void>;
   error?: string;
   setError?: (msg: string) => void;
 };
+
+function getStoredOwner(): Owner {
+  try {
+    const v = localStorage.getItem(OWNER_STORAGE_KEY);
+    if (v === 'self' || v === 'shared') return v;
+  } catch {}
+  return 'self';
+}
 
 export default function EditEntryModal({
   open, title, type, initial, onClose, onSave, error, setError,
@@ -30,6 +43,7 @@ export default function EditEntryModal({
   const [amount, setAmount] = useState('');
   const [subcategoryId, setSubcategoryId] = useState('');
   const [entryDate, setEntryDate] = useState('');
+  const [owner, setOwner] = useState<Owner>('self');
 
   useEffect(() => {
     if (initial) {
@@ -37,6 +51,7 @@ export default function EditEntryModal({
       setAmount(String(initial.amount ?? ''));
       setSubcategoryId(initial.subcategory_id ?? '');
       setEntryDate(initial.entry_date ?? '');
+      setOwner(initial.owner ?? 'self');
     } else {
       const today = new Date();
       const yyyy = today.getFullYear();
@@ -46,8 +61,14 @@ export default function EditEntryModal({
       setAmount('');
       setSubcategoryId('');
       setEntryDate(`${yyyy}-${mm}-${dd}`);
+      setOwner(getStoredOwner());
     }
   }, [initial]);
+
+  const handleOwnerChange = (v: Owner) => {
+    setOwner(v);
+    try { localStorage.setItem(OWNER_STORAGE_KEY, v); } catch {}
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +78,10 @@ export default function EditEntryModal({
     if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0) {
       setError?.('金額は0以上の整数で入力してください'); return;
     }
-
     if (!/^\d{4}-\d{2}-\d{2}$/.test(entryDate)) {
       setError?.('日付はYYYY-MM-DD形式で入力してください'); return;
     }
-    await onSave({ id: initial?.id, source: source.trim(), amount: n, subcategory_id: subcategoryId, entry_date: entryDate });
+    await onSave({ id: initial?.id, source: source.trim(), amount: n, subcategory_id: subcategoryId, entry_date: entryDate, owner });
   };
 
   return (
@@ -100,6 +120,25 @@ export default function EditEntryModal({
             onChange={(e) => setEntryDate(e.target.value)}
             className="rounded border border-gray-600 bg-gray-800 p-2 text-white placeholder-gray-400"
           />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm text-gray-300">帰属</label>
+          <div className="flex gap-3">
+            {(['self', 'shared'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => handleOwnerChange(v)}
+                className={`rounded px-4 py-2 text-sm font-medium transition-colors ${
+                  owner === v
+                    ? 'bg-blue-700 text-white'
+                    : 'border border-gray-500 text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                {v === 'self' ? '自分' : '家族共有'}
+              </button>
+            ))}
+          </div>
         </div>
         {error && <p className="whitespace-pre-line text-red-400">{error}</p>}
         <div className="flex justify-end gap-2">
