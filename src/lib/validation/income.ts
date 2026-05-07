@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { sourceSchema, amountSchema, entryDateSchema } from './common';
+import { sourceSchema, amountSchema, entryDateSchema, ownerSchema } from './common';
 
 const subcategoryIdSchema = z.string().uuid({ message: '無効なカテゴリIDです' });
 const optionalSubcategoryId = subcategoryIdSchema.optional().or(z.literal('').transform(() => undefined));
@@ -9,6 +9,7 @@ export const IncomeCreateSchema = z.object({
   amount: amountSchema,
   subcategory_id: optionalSubcategoryId,
   entry_date: entryDateSchema,
+  owner: ownerSchema.default('self'),
 });
 
 export const IncomeUpdateSchema = z
@@ -18,9 +19,11 @@ export const IncomeUpdateSchema = z
     amount: amountSchema.optional(),
     subcategory_id: optionalSubcategoryId,
     entry_date: entryDateSchema.optional(),
+    owner: ownerSchema.optional(),
   })
   .refine(obj =>
     obj.source !== undefined || obj.amount !== undefined ||
-    obj.subcategory_id !== undefined || obj.entry_date !== undefined,
+    obj.subcategory_id !== undefined || obj.entry_date !== undefined ||
+    obj.owner !== undefined,
     { message: '更新項目がありません' }
   );
