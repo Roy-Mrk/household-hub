@@ -125,6 +125,52 @@ describe('POST /api/expense', () => {
     );
   });
 
+  it('owner を指定しない場合はデフォルト self で登録される', async () => {
+    const membershipQ = makeQueryMock({ data: null, error: null });
+    const insertQ = makeQueryMock({ data: [{ id: 1 }], error: null });
+    mockFrom
+      .mockImplementationOnce(() => membershipQ)
+      .mockImplementationOnce(() => insertQ);
+
+    const req = new Request('http://localhost/api/expense', {
+      method: 'POST',
+      body: JSON.stringify({ source: '食費', amount: 5000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01' }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(insertQ.insert).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ owner: 'self' })])
+    );
+  });
+
+  it('owner: shared を指定すると shared で登録される', async () => {
+    const membershipQ = makeQueryMock({ data: null, error: null });
+    const insertQ = makeQueryMock({ data: [{ id: 1 }], error: null });
+    mockFrom
+      .mockImplementationOnce(() => membershipQ)
+      .mockImplementationOnce(() => insertQ);
+
+    const req = new Request('http://localhost/api/expense', {
+      method: 'POST',
+      body: JSON.stringify({ source: '食費', amount: 5000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01', owner: 'shared' }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(insertQ.insert).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ owner: 'shared' })])
+    );
+  });
+
+  it('不正な owner 値はバリデーションエラー400', async () => {
+    const req = new Request('http://localhost/api/expense', {
+      method: 'POST',
+      body: JSON.stringify({ source: '食費', amount: 5000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01', owner: 'invalid' }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: 'validation_error' });
+  });
+
   it('世帯所属中は household_id が自動付与される', async () => {
     const HOUSEHOLD_ID = 'hh-uuid-456';
     const newRow = { id: 1, source: '食費', amount: 5000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01', user_id: TEST_USER.id, household_id: HOUSEHOLD_ID };
@@ -193,6 +239,29 @@ describe('PATCH /api/expense', () => {
     const res = await PATCH(req);
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ message: '更新OK' });
+  });
+
+  it('owner を shared に更新できる', async () => {
+    const updated = [{ id: 1, owner: 'shared' }];
+    mockFrom.mockReturnValue(makeQueryMock({ data: updated, error: null }));
+
+    const req = new Request('http://localhost/api/expense', {
+      method: 'PATCH',
+      body: JSON.stringify({ id: 1, owner: 'shared' }),
+    });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ message: '更新OK' });
+  });
+
+  it('不正な owner 値での更新はバリデーションエラー400', async () => {
+    const req = new Request('http://localhost/api/expense', {
+      method: 'PATCH',
+      body: JSON.stringify({ id: 1, owner: 'other' }),
+    });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: 'validation_error' });
   });
 
   it('idが欠損の場合はバリデーションエラー400', async () => {
