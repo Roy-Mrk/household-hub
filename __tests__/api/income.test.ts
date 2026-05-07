@@ -171,6 +171,42 @@ describe('POST /api/income', () => {
     expect(await res.json()).toMatchObject({ error: 'validation_error' });
   });
 
+  it('needs_settlement を指定しない場合はデフォルト true で登録される', async () => {
+    const membershipQ = makeQueryMock({ data: null, error: null });
+    const insertQ = makeQueryMock({ data: [{ id: 1 }], error: null });
+    mockFrom
+      .mockImplementationOnce(() => membershipQ)
+      .mockImplementationOnce(() => insertQ);
+
+    const req = new Request('http://localhost/api/income', {
+      method: 'POST',
+      body: JSON.stringify({ source: '給与', amount: 300000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01' }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(insertQ.insert).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ needs_settlement: true })])
+    );
+  });
+
+  it('needs_settlement: false を指定すると false で登録される', async () => {
+    const membershipQ = makeQueryMock({ data: null, error: null });
+    const insertQ = makeQueryMock({ data: [{ id: 1 }], error: null });
+    mockFrom
+      .mockImplementationOnce(() => membershipQ)
+      .mockImplementationOnce(() => insertQ);
+
+    const req = new Request('http://localhost/api/income', {
+      method: 'POST',
+      body: JSON.stringify({ source: '給与', amount: 300000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01', needs_settlement: false }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(insertQ.insert).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ needs_settlement: false })])
+    );
+  });
+
   it('世帯所属中は household_id が自動付与される', async () => {
     const HOUSEHOLD_ID = 'hh-uuid-123';
     const newRow = { id: 1, source: '給与', amount: 300000, subcategory_id: SUBCATEGORY_ID, entry_date: '2026-04-01', user_id: TEST_USER.id, household_id: HOUSEHOLD_ID };
@@ -248,6 +284,19 @@ describe('PATCH /api/income', () => {
     const req = new Request('http://localhost/api/income', {
       method: 'PATCH',
       body: JSON.stringify({ id: 1, owner: 'shared' }),
+    });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ message: '更新OK' });
+  });
+
+  it('needs_settlement を false に更新できる', async () => {
+    const updated = [{ id: 1, needs_settlement: false }];
+    mockFrom.mockReturnValue(makeQueryMock({ data: updated, error: null }));
+
+    const req = new Request('http://localhost/api/income', {
+      method: 'PATCH',
+      body: JSON.stringify({ id: 1, needs_settlement: false }),
     });
     const res = await PATCH(req);
     expect(res.status).toBe(200);
