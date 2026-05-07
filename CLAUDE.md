@@ -61,6 +61,11 @@ Pages are client components (`'use client'`) that fetch from the internal API ro
 
 Two tables with identical structure (`income`, `expense`): `id`, `source`, `amount`, `created_at`, `updated_at`. RLS is enabled — anonymous users get SELECT only; authenticated users get full CRUD. `updated_at` is maintained by a trigger.
 
+### Git ワークフロー
+
+- **main への直接コミット禁止** — 作業開始前に必ず `git checkout -b feature/issue-XX-xxx` でブランチを切る
+- 実装完了後は PR を作成して main にマージする
+
 ### Key Conventions
 
 - Path alias `@/*` maps to `./src/*`
