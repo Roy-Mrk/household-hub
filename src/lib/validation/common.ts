@@ -14,6 +14,10 @@ export const ownerSchema = z.enum(['self', 'shared'], {
   message: '帰属は self または shared を指定してください',
 });
 
+export const needsSettlementSchema = z.boolean({
+  message: '精算待ちフラグは true または false を指定してください',
+});
+
 export const entryDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, '日付はYYYY-MM-DD形式で入力してください')

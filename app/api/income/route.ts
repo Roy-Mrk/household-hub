@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'validation_error', issues: zodErrorToMessages(parsed.error) }, { status: 400 });
     }
-    const { source, amount, entry_date, owner } = parsed.data;
+    const { source, amount, entry_date, owner, needs_settlement } = parsed.data;
     let { subcategory_id } = parsed.data;
 
     // 未選択の場合はマスタの「未分類」（income型）を自動セット
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from('income')
-      .insert([{ source, amount, subcategory_id: subcategory_id ?? null, entry_date, owner, user_id: user.id, household_id: membership?.household_id ?? null }])
+      .insert([{ source, amount, subcategory_id: subcategory_id ?? null, entry_date, owner, needs_settlement, user_id: user.id, household_id: membership?.household_id ?? null }])
       .select();
 
     if (error) throw error;

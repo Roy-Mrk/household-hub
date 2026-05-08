@@ -15,6 +15,7 @@ export type EditEntry = {
   subcategory_id?: string | null;
   entry_date?: string | null;
   owner?: Owner | null;
+  needs_settlement?: boolean | null;
 };
 
 type Props = {
@@ -23,7 +24,7 @@ type Props = {
   type: 'income' | 'expense';
   initial: EditEntry | null;
   onClose: () => void;
-  onSave: (payload: { id?: number; source: string; amount: number; subcategory_id: string; entry_date: string; owner: Owner }) => Promise<void>;
+  onSave: (payload: { id?: number; source: string; amount: number; subcategory_id: string; entry_date: string; owner: Owner; needs_settlement: boolean }) => Promise<void>;
   error?: string;
   setError?: (msg: string) => void;
 };
@@ -44,6 +45,7 @@ export default function EditEntryModal({
   const [subcategoryId, setSubcategoryId] = useState('');
   const [entryDate, setEntryDate] = useState('');
   const [owner, setOwner] = useState<Owner>('self');
+  const [needsSettlement, setNeedsSettlement] = useState(true);
 
   useEffect(() => {
     if (initial) {
@@ -52,6 +54,7 @@ export default function EditEntryModal({
       setSubcategoryId(initial.subcategory_id ?? '');
       setEntryDate(initial.entry_date ?? '');
       setOwner(initial.owner ?? 'self');
+      setNeedsSettlement(initial.owner === 'shared' ? (initial.needs_settlement ?? true) : false);
     } else {
       const today = new Date();
       const yyyy = today.getFullYear();
@@ -61,12 +64,16 @@ export default function EditEntryModal({
       setAmount('');
       setSubcategoryId('');
       setEntryDate(`${yyyy}-${mm}-${dd}`);
-      setOwner(getStoredOwner());
+      const storedOwner = getStoredOwner();
+      setOwner(storedOwner);
+      setNeedsSettlement(storedOwner === 'shared');
     }
   }, [initial]);
 
   const handleOwnerChange = (v: Owner) => {
     setOwner(v);
+    // self に切り替えたら精算待ちを強制 false
+    if (v === 'self') setNeedsSettlement(false);
     try { localStorage.setItem(OWNER_STORAGE_KEY, v); } catch {}
   };
 
@@ -81,8 +88,11 @@ export default function EditEntryModal({
     if (!/^\d{4}-\d{2}-\d{2}$/.test(entryDate)) {
       setError?.('日付はYYYY-MM-DD形式で入力してください'); return;
     }
-    await onSave({ id: initial?.id, source: source.trim(), amount: n, subcategory_id: subcategoryId, entry_date: entryDate, owner });
+    const effectiveNeedsSettlement = owner === 'shared' ? needsSettlement : false;
+    await onSave({ id: initial?.id, source: source.trim(), amount: n, subcategory_id: subcategoryId, entry_date: entryDate, owner, needs_settlement: effectiveNeedsSettlement });
   };
+
+  const settlementDisabled = owner === 'self';
 
   return (
     <Modal open={open} onClose={onClose} title={title ?? '明細を編集'}>
@@ -139,6 +149,21 @@ export default function EditEntryModal({
               </button>
             ))}
           </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className={`flex items-center gap-2 text-sm ${settlementDisabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}>
+            <input
+              type="checkbox"
+              checked={settlementDisabled ? false : needsSettlement}
+              onChange={(e) => setNeedsSettlement(e.target.checked)}
+              disabled={settlementDisabled}
+              className="h-4 w-4 rounded border-gray-600 bg-gray-800 accent-blue-600"
+            />
+            <span className="text-gray-300">精算待ち</span>
+            {settlementDisabled && (
+              <span className="text-xs text-gray-500">（家族共有のみ対象）</span>
+            )}
+          </label>
         </div>
         {error && <p className="whitespace-pre-line text-red-400">{error}</p>}
         <div className="flex justify-end gap-2">
