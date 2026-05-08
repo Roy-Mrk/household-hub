@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import EditEntryModal from '@/components/EditEntryModal';
@@ -8,22 +8,18 @@ import MonthNav from '@/components/MonthNav';
 import { readApiError } from '@/lib/ui/readApiError';
 import { parseMonth, monthToRange } from '@/lib/monthUtils';
 
-// 型定義
 import type { Database } from '@/types/database.types';
 type IncomeRow = Database['public']['Tables']['income']['Row'];
-type IncomeInsert = Database['public']['Tables']['income']['Insert'];
+
 export default function IncomePage() {
   const searchParams = useSearchParams();
   const month = parseMonth(searchParams?.get('month'));
   const { from, to } = monthToRange(month);
 
-  const [amount, setAmount] = useState<string>('');
-  const [source, setSource] = useState<string>('');
   const [incomes, setIncomes] = useState<IncomeRow[]>([]);
   const [filter, setFilter] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [errMsg, setErrMsg] = useState<string>('');
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [limit] = useState<number>(50);
   const [offset, setOffset] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -67,39 +63,6 @@ export default function IncomePage() {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, month, offset]);
-
-  const resetForm = (): void => {
-    setAmount('');
-    setSource('');
-    setEditingId(null);
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-    setErrMsg('');
-    try {
-      const payload = { source, amount };
-      const method = editingId ? 'PATCH' : 'POST';
-      const body = editingId ? JSON.stringify({ id: editingId, ...payload }) : JSON.stringify(payload);
-
-      const res = await fetch('/api/income', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body,
-      });
-      if (!res.ok) {
-        const msg = await readApiError(res);
-        setErrMsg(msg);
-        return;
-      }
-      resetForm();
-      await load();
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e);
-      setErrMsg(editingId ? '更新に失敗しました' : '保存に失敗しました');
-    }
-  };
 
   const handleEdit = (row: IncomeRow): void => {
     setEditItem(row);
