@@ -3,7 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import type { Payment, SplitRatio } from '@/lib/settlementCalc';
+import Image from 'next/image';
+import type { Payment } from '@/lib/settlementCalc';
+
+type SplitRatio = {
+  user_id: string;
+  display_name: string;
+  ratio: number;
+  avatar_url: string | null;
+};
 
 type SettlementItem = {
   item_type: 'income' | 'expense';
@@ -23,6 +31,19 @@ type SettlementDetail = {
   payments: Payment[];
   items: SettlementItem[];
 };
+
+function UserAvatar({ avatarUrl, name, color = 'blue' }: { avatarUrl: string | null; name: string; color?: 'blue' | 'green' }) {
+  const bg = color === 'green' ? 'bg-green-800' : 'bg-blue-800';
+  return avatarUrl ? (
+    <Image src={avatarUrl} alt={name} width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
+  ) : (
+    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${bg}`}>
+      <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="currentColor">
+        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+      </svg>
+    </div>
+  );
+}
 
 export default function SettlementDetailPage() {
   const params = useParams();
@@ -81,17 +102,12 @@ export default function SettlementDetailPage() {
       ) : (
         <div className="space-y-6">
 
-          {/* 基本情報 */}
-          <section className="bg-gray-800 rounded p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm text-gray-400">精算日時</p>
-                <p className="font-semibold">{new Date(settlement.settled_at).toLocaleString()}</p>
-                <p className="mt-2 text-sm text-gray-400">精算合計（支出-収入）</p>
-                <p className="font-bold text-xl">{Number(settlement.total_amount).toLocaleString()}円</p>
-              </div>
+          {/* 精算内容（最重要・最上部に強調表示） */}
+          <section className="rounded-xl bg-blue-950 border border-blue-800 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-blue-300">精算内容</h2>
               {settlement.cancelled_at ? (
-                <div className="text-right shrink-0">
+                <div className="text-right">
                   <span className="inline-block rounded-full bg-gray-600 px-3 py-1 text-xs font-medium text-gray-300">
                     キャンセル済み
                   </span>
@@ -101,12 +117,60 @@ export default function SettlementDetailPage() {
                 <button
                   onClick={handleCancel}
                   disabled={cancelling}
-                  className="shrink-0 rounded border border-red-700 px-3 py-1.5 text-sm text-red-400 hover:bg-red-900 hover:bg-opacity-30 disabled:opacity-40 transition-colors"
+                  className="rounded border border-red-700 px-3 py-1.5 text-xs text-red-400 hover:bg-red-900 hover:bg-opacity-30 disabled:opacity-40 transition-colors"
                 >
                   {cancelling ? 'キャンセル中...' : '精算をキャンセル'}
                 </button>
               )}
             </div>
+            {settlement.payments.length === 0 ? (
+              <p className="text-blue-300 text-sm">精算不要（全員均等）</p>
+            ) : (
+              <ul className="space-y-5">
+                {settlement.payments.map((p, i) => (
+                  <li key={i} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* 支払元 */}
+                      <div className="flex flex-col items-center gap-1 shrink-0">
+                        <UserAvatar
+                          avatarUrl={settlement.split_ratios.find(r => r.display_name === p.from_name)?.avatar_url ?? null}
+                          name={p.from_name}
+                          color="blue"
+                        />
+                        <span className="text-xs font-medium text-white max-w-16 truncate text-center">{p.from_name}</span>
+                      </div>
+
+                      {/* 矢印 */}
+                      <svg viewBox="0 0 24 24" className="h-5 w-5 text-blue-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />
+                      </svg>
+
+                      {/* 支払先 */}
+                      <div className="flex flex-col items-center gap-1 shrink-0">
+                        <UserAvatar
+                          avatarUrl={settlement.split_ratios.find(r => r.display_name === p.to_name)?.avatar_url ?? null}
+                          name={p.to_name}
+                          color="green"
+                        />
+                        <span className="text-xs font-medium text-white max-w-16 truncate text-center">{p.to_name}</span>
+                      </div>
+                    </div>
+
+                    <span className="text-2xl font-bold text-white shrink-0">
+                      {p.amount.toLocaleString()}円
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* 基本情報 */}
+          <section className="bg-gray-800 rounded p-4">
+            <p className="text-sm text-gray-400">精算日時</p>
+            <p className="font-semibold">{new Date(settlement.settled_at).toLocaleString()}</p>
+            <p className="mt-2 text-sm text-gray-400">精算合計（支出-収入）</p>
+            <p className="font-bold text-xl">{Number(settlement.total_amount).toLocaleString()}円</p>
           </section>
 
           {/* 分担割合 */}
@@ -120,26 +184,6 @@ export default function SettlementDetailPage() {
                 </li>
               ))}
             </ul>
-          </section>
-
-          {/* 精算内容 */}
-          <section>
-            <h2 className="text-lg font-semibold mb-2 text-gray-200">精算内容</h2>
-            {settlement.payments.length === 0 ? (
-              <p className="text-gray-400">精算不要（全員均等）</p>
-            ) : (
-              <ul className="space-y-2">
-                {settlement.payments.map((p, i) => (
-                  <li key={i} className="bg-blue-900 bg-opacity-40 rounded p-3 text-sm">
-                    <span className="font-semibold text-blue-300">{p.from_name}</span>
-                    <span className="text-gray-300"> → </span>
-                    <span className="font-semibold text-blue-300">{p.to_name}</span>
-                    <span className="text-gray-300">：</span>
-                    <span className="font-bold text-white">{p.amount.toLocaleString()}円</span>
-                  </li>
-                ))}
-              </ul>
-            )}
           </section>
 
           {/* 対象明細 */}

@@ -90,6 +90,10 @@ describe('GET /api/households', () => {
       .mockImplementationOnce(() => makeQueryMock({ data: household, error: null }))
       .mockImplementationOnce(() => makeQueryMock({ data: members, error: null }))
       .mockImplementationOnce(() => makeQueryMock({ data: profiles, error: null }));
+    vi.mocked(supabaseAdmin.auth.admin.getUserById).mockResolvedValue({
+      data: { user: { id: TEST_USER.id, email: TEST_USER.email, user_metadata: { avatar_url: null } } as never },
+      error: null,
+    });
 
     const res = await GET();
     expect(res.status).toBe(200);

@@ -61,7 +61,16 @@ export async function GET(
     // entry_date 降順でソート
     enrichedItems.sort((a, b) => b.entry_date.localeCompare(a.entry_date));
 
-    return NextResponse.json({ data: { ...settlement, items: enrichedItems } });
+    // split_ratios のメンバーにアバター URL を付与
+    const enrichedRatios = await Promise.all(
+      (settlement.split_ratios as { user_id: string; display_name: string; ratio: number }[]).map(async r => {
+        const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(r.user_id);
+        const avatarUrl = (user?.user_metadata as { avatar_url?: string } | null)?.avatar_url ?? null;
+        return { ...r, avatar_url: avatarUrl };
+      })
+    );
+
+    return NextResponse.json({ data: { ...settlement, split_ratios: enrichedRatios, items: enrichedItems } });
   } catch (e) {
     console.error('GET settlement/[id] error:', e);
     return NextResponse.json({ error: 'データ取得に失敗しました' }, { status: 500 });
