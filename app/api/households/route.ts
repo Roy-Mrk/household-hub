@@ -42,11 +42,10 @@ export async function GET() {
 
     const membersWithName = await Promise.all(
       (members ?? []).map(async (m) => {
-        const displayName = profileMap[m.user_id];
-        if (displayName) return { ...m, display_name: displayName };
-        // プロフィール未設定の場合はメールアドレスをフォールバック
         const { data: { user: u } } = await supabaseAdmin.auth.admin.getUserById(m.user_id);
-        return { ...m, display_name: u?.email ?? '' };
+        const displayName = profileMap[m.user_id] ?? u?.email ?? '';
+        const avatarUrl = (u?.user_metadata as { avatar_url?: string } | null)?.avatar_url ?? null;
+        return { ...m, display_name: displayName, avatar_url: avatarUrl };
       })
     );
 
