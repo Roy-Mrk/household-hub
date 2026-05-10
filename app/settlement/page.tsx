@@ -38,10 +38,10 @@ export default function SettlementPage() {
         ]);
 
         if (!householdRes.ok) { setErrMsg('世帯情報の取得に失敗しました'); return; }
-        const hJson = await householdRes.json() as { household?: { members?: { user_id: string; profile?: { display_name?: string } | null }[] } | null };
+        const hJson = await householdRes.json() as { household?: { members?: { user_id: string; display_name?: string | null }[] } | null };
         const rawMembers: Member[] = (hJson.household?.members ?? []).map(m => ({
           user_id: m.user_id,
-          display_name: m.profile?.display_name ?? m.user_id.slice(0, 8),
+          display_name: m.display_name ?? m.user_id.slice(0, 8),
         }));
         setMembers(rawMembers);
 

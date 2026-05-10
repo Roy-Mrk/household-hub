@@ -7,6 +7,7 @@ import type { Payment, SplitRatio } from '@/lib/settlementCalc';
 type Settlement = {
   id: string;
   settled_at: string;
+  cancelled_at: string | null;
   total_amount: number;
   split_ratios: SplitRatio[];
   payments: Payment[];
@@ -61,7 +62,14 @@ export default function SettlementHistoryPage() {
                     className="block bg-gray-800 rounded p-4 hover:bg-gray-700 transition-colors">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="text-sm text-gray-400">{date}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-gray-400">{date}</p>
+                          {s.cancelled_at && (
+                            <span className="rounded-full bg-gray-600 px-2 py-0.5 text-xs text-gray-300">
+                              キャンセル済み
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-1 font-semibold">合計 {Number(s.total_amount).toLocaleString()}円</p>
                         <div className="mt-1 flex flex-wrap gap-1">
                           {s.split_ratios.map(r => (
