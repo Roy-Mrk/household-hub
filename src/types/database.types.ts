@@ -14,78 +14,358 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       expense: {
         Row: {
           amount: number
-          category: string
           created_at: string
-          entry_date: string
+          entry_date: string | null
+          household_id: string | null
           id: number
+          needs_settlement: boolean
+          owner: string
           source: string
+          subcategory_id: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
           amount: number
-          category?: string
           created_at?: string
-          entry_date?: string
+          entry_date?: string | null
+          household_id?: string | null
           id?: number
+          needs_settlement?: boolean
+          owner?: string
           source: string
+          subcategory_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           amount?: number
-          category?: string
           created_at?: string
-          entry_date?: string
+          entry_date?: string | null
+          household_id?: string | null
           id?: number
+          needs_settlement?: boolean
+          owner?: string
           source?: string
+          subcategory_id?: string | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "subcategories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      household_invitations: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          household_id: string
+          id: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          household_id: string
+          id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          household_id?: string
+          id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      household_members: {
+        Row: {
+          household_id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          household_id: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          household_id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      households: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
       income: {
         Row: {
           amount: number
-          category: string
           created_at: string
-          entry_date: string
+          entry_date: string | null
+          household_id: string | null
           id: number
+          needs_settlement: boolean
+          owner: string
           source: string
+          subcategory_id: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
-          amount?: number
-          category?: string
+          amount: number
           created_at?: string
-          entry_date?: string
+          entry_date?: string | null
+          household_id?: string | null
           id?: number
+          needs_settlement?: boolean
+          owner?: string
           source: string
+          subcategory_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           amount?: number
-          category?: string
           created_at?: string
-          entry_date?: string
+          entry_date?: string | null
+          household_id?: string | null
           id?: number
+          needs_settlement?: boolean
+          owner?: string
           source?: string
+          subcategory_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "income_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "income_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "subcategories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          updated_at?: string
+          user_id?: string
+        }
         Relationships: []
+      }
+      settlement_items: {
+        Row: {
+          id: string
+          item_id: number
+          item_type: string
+          settlement_id: string
+        }
+        Insert: {
+          id?: string
+          item_id: number
+          item_type: string
+          settlement_id: string
+        }
+        Update: {
+          id?: string
+          item_id?: number
+          item_type?: string
+          settlement_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlement_items_settlement_id_fkey"
+            columns: ["settlement_id"]
+            isOneToOne: false
+            referencedRelation: "settlements"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      settlements: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          household_id: string
+          id: string
+          payments: Json
+          settled_at: string
+          split_ratios: Json
+          total_amount: number
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          household_id: string
+          id?: string
+          payments: Json
+          settled_at?: string
+          split_ratios: Json
+          total_amount: number
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          payments?: Json
+          settled_at?: string
+          split_ratios?: Json
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlements_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      subcategories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          user_id: string | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          user_id?: string | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_household_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_my_household_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
