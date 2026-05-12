@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/apiHelpers';
 import { CategoryCreateSchema, zodErrorToMessages } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 // GET ?type=income|expense: カテゴリ一覧（マスタ + ユーザー独自）をサブカテゴリ付きで返す
 export async function GET(req: NextRequest) {
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ categories: result }, { status: 200 });
   } catch (e) {
-    console.error('GET categories error:', e);
+    logger.error('GET categories error:', e);
     return NextResponse.json({ error: 'カテゴリの取得に失敗しました' }, { status: 500 });
   }
 }
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
     if (error) throw error;
     return NextResponse.json({ category: data }, { status: 201 });
   } catch (e) {
-    console.error('POST categories error:', e);
+    logger.error('POST categories error:', e);
     return NextResponse.json({ error: 'カテゴリの作成に失敗しました' }, { status: 500 });
   }
 }

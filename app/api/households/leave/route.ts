@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
+import { logger } from '@/lib/logger';
 
 // POST: 世帯から退出（メンバーのみ。オーナーは /api/households DELETE で解散）
 export async function POST() {
@@ -31,7 +32,7 @@ export async function POST() {
 
     return NextResponse.json({ message: '世帯から退出しました' }, { status: 200 });
   } catch (e) {
-    console.error('POST leave error:', e);
+    logger.error('POST leave error:', e);
     return NextResponse.json({ error: '退出に失敗しました' }, { status: 500 });
   }
 }

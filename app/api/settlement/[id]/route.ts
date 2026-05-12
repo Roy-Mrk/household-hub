@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/apiHelpers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { logger } from '@/lib/logger';
 
 // GET /api/settlement/[id] — 精算詳細（対象明細の内容含む）
 export async function GET(
@@ -72,7 +73,7 @@ export async function GET(
 
     return NextResponse.json({ data: { ...settlement, split_ratios: enrichedRatios, items: enrichedItems } });
   } catch (e) {
-    console.error('GET settlement/[id] error:', e);
+    logger.error('GET settlement/[id] error:', e);
     return NextResponse.json({ error: 'データ取得に失敗しました' }, { status: 500 });
   }
 }
@@ -123,7 +124,7 @@ export async function PATCH(
 
     return NextResponse.json({ message: 'キャンセルOK' });
   } catch (e) {
-    console.error('PATCH settlement/[id] error:', e);
+    logger.error('PATCH settlement/[id] error:', e);
     return NextResponse.json({ error: 'キャンセルに失敗しました' }, { status: 500 });
   }
 }

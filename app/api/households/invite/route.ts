@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
 import { HouseholdInviteSchema, zodErrorToMessages } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 // GET ?token=xxx: 招待情報を取得（参加前のプレビュー用）
 export async function GET(req: NextRequest) {
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
       },
     }, { status: 200 });
   } catch (e) {
-    console.error('GET invite error:', e);
+    logger.error('GET invite error:', e);
     return NextResponse.json({ error: '招待情報の取得に失敗しました' }, { status: 500 });
   }
 }
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ token: invitation.id }, { status: 201 });
   } catch (e) {
-    console.error('POST invite error:', e);
+    logger.error('POST invite error:', e);
     return NextResponse.json({ error: '招待の作成に失敗しました' }, { status: 500 });
   }
 }

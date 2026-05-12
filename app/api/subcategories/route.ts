@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/apiHelpers';
 import { SubcategoryCreateSchema, zodErrorToMessages } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 // POST: ユーザー独自サブカテゴリを作成
 export async function POST(request: Request) {
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
     if (error) throw error;
     return NextResponse.json({ subcategory: data }, { status: 201 });
   } catch (e) {
-    console.error('POST subcategories error:', e);
+    logger.error('POST subcategories error:', e);
     return NextResponse.json({ error: 'サブカテゴリの作成に失敗しました' }, { status: 500 });
   }
 }

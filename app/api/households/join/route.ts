@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { HouseholdJoinSchema, zodErrorToMessages } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 // POST: 招待トークンで世帯に参加
 export async function POST(request: Request) {
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (e) {
-    console.error('POST join error:', e);
+    logger.error('POST join error:', e);
     return NextResponse.json({ error: '参加に失敗しました' }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/apiHelpers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import type { SplitRatio, Payment, SettlementItem } from '@/lib/settlementCalc';
 import { calcPayments } from '@/lib/settlementCalc';
+import { logger } from '@/lib/logger';
 
 // GET /api/settlement — 自世帯の精算履歴一覧
 export async function GET(req: NextRequest) {
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
     return NextResponse.json({ data, count, limit, offset });
   } catch (e) {
-    console.error('GET settlement error:', e);
+    logger.error('GET settlement error:', e);
     return NextResponse.json({ error: 'データ取得に失敗しました' }, { status: 500 });
   }
 }
@@ -120,7 +121,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ message: '精算OK', data: settlement }, { status: 200 });
   } catch (e) {
-    console.error('POST settlement error:', e);
+    logger.error('POST settlement error:', e);
     return NextResponse.json({ error: '精算に失敗しました' }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { requireAuth, parseListParams } from '@/lib/apiHelpers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { IncomeCreateSchema, IncomeUpdateSchema, zodErrorToMessages } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const auth = await requireAuth();
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     if (error) throw error;
     return NextResponse.json({ data, count, limit: params.limit, offset: params.offset }, { status: 200 });
   } catch (error) {
-    console.error('GET income error:', error);
+    logger.error('GET income error:', error);
     return NextResponse.json({ error: 'データ取得に失敗しました' }, { status: 500 });
   }
 }
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     if (error) throw error;
     return NextResponse.json({ message: '作成OK', data }, { status: 200 });
   } catch (error) {
-    console.error('POST income error:', error);
+    logger.error('POST income error:', error);
     return NextResponse.json({ error: '作成に失敗しました' }, { status: 500 });
   }
 }
@@ -100,7 +101,7 @@ export async function PATCH(request: Request) {
     if (error) throw error;
     return NextResponse.json({ message: '更新OK', data }, { status: 200 });
   } catch (error) {
-    console.error('PATCH income error:', error);
+    logger.error('PATCH income error:', error);
     return NextResponse.json({ error: '更新に失敗しました' }, { status: 500 });
   }
 }
@@ -119,7 +120,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     if (error) throw error;
     return NextResponse.json({ message: '削除OK' }, { status: 200 });
   } catch (error) {
-    console.error('DELETE income error:', error);
+    logger.error('DELETE income error:', error);
     return NextResponse.json({ error: '削除に失敗しました' }, { status: 500 });
   }
 }
