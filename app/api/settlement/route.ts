@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
     return NextResponse.json({ data, count, limit, offset });
   } catch (e) {
-    logger.error('GET settlement error:', e);
+    logger.error('GET settlement error', { error: e });
     return NextResponse.json({ error: 'データ取得に失敗しました' }, { status: 500 });
   }
 }
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ message: '精算OK', data: settlement }, { status: 200 });
   } catch (e) {
-    logger.error('POST settlement error:', e);
+    logger.error('POST settlement error', { error: e });
     return NextResponse.json({ error: '精算に失敗しました' }, { status: 500 });
   }
 }

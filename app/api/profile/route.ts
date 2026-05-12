@@ -78,7 +78,7 @@ export async function PATCH(request: Request) {
     if (error) throw error;
     return NextResponse.json({ profile }, { status: 200 });
   } catch (e) {
-    logger.error('PATCH profile error:', e);
+    logger.error('PATCH profile error', { error: e });
     return NextResponse.json({ error: '更新に失敗しました' }, { status: 500 });
   }
 }

@@ -32,7 +32,7 @@ export async function POST() {
 
     return NextResponse.json({ message: '世帯から退出しました' }, { status: 200 });
   } catch (e) {
-    logger.error('POST leave error:', e);
+    logger.error('POST leave error', { error: e });
     return NextResponse.json({ error: '退出に失敗しました' }, { status: 500 });
   }
 }

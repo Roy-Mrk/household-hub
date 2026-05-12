@@ -54,7 +54,7 @@ export async function GET() {
       household: { ...household, role: membership.role, members: membersWithName },
     }, { status: 200 });
   } catch (e) {
-    logger.error('GET households error:', e);
+    logger.error('GET households error', { error: e });
     return NextResponse.json({ error: 'データ取得に失敗しました' }, { status: 500 });
   }
 }
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ household }, { status: 201 });
   } catch (e) {
-    logger.error('POST households error:', e);
+    logger.error('POST households error', { error: e });
     return NextResponse.json({ error: '世帯の作成に失敗しました' }, { status: 500 });
   }
 }
@@ -136,7 +136,7 @@ export async function DELETE() {
 
     return NextResponse.json({ message: '世帯を解散しました' }, { status: 200 });
   } catch (e) {
-    logger.error('DELETE households error:', e);
+    logger.error('DELETE households error', { error: e });
     return NextResponse.json({ error: '世帯の解散に失敗しました' }, { status: 500 });
   }
 }

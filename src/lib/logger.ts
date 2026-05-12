@@ -3,19 +3,35 @@ import path from 'path';
 import fs from 'fs';
 
 const isVercel = Boolean(process.env.VERCEL);
-const isDev = process.env.NODE_ENV !== 'production';
+const isDev = process.env.NODE_ENV === 'development';
+
+// { error: Error } を JSON シリアライズ可能な形式に変換する
+const errorSerializer = winston.format((info) => {
+  const err = info['error'];
+  if (err instanceof Error) {
+    info['error'] = { message: err.message, name: err.name, stack: err.stack };
+  }
+  return info;
+});
 
 const jsonFormat = winston.format.combine(
+  errorSerializer(),
   winston.format.timestamp(),
   winston.format.json()
 );
 
 const prettyFormat = winston.format.combine(
+  errorSerializer(),
   winston.format.colorize(),
   winston.format.timestamp({ format: 'HH:mm:ss' }),
-  winston.format.printf(({ timestamp, level, message, ...meta }) => {
+  winston.format.printf((info) => {
+    const { timestamp, level, message, error, ...meta } = info as {
+      timestamp: string; level: string; message: string;
+      error?: unknown; [key: string]: unknown;
+    };
+    const errStr  = error ? ` error=${JSON.stringify(error)}` : '';
     const metaStr = Object.keys(meta).length ? ' ' + JSON.stringify(meta) : '';
-    return `${timestamp} [${level}] ${message}${metaStr}`;
+    return `${timestamp} [${level}] ${message}${errStr}${metaStr}`;
   })
 );
 

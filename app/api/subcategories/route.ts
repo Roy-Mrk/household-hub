@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     if (error) throw error;
     return NextResponse.json({ subcategory: data }, { status: 201 });
   } catch (e) {
-    logger.error('POST subcategories error:', e);
+    logger.error('POST subcategories error', { error: e });
     return NextResponse.json({ error: 'サブカテゴリの作成に失敗しました' }, { status: 500 });
   }
 }

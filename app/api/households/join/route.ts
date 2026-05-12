@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (e) {
-    logger.error('POST join error:', e);
+    logger.error('POST join error', { error: e });
     return NextResponse.json({ error: '参加に失敗しました' }, { status: 500 });
   }
 }

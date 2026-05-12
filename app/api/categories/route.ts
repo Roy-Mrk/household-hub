@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ categories: result }, { status: 200 });
   } catch (e) {
-    logger.error('GET categories error:', e);
+    logger.error('GET categories error', { error: e });
     return NextResponse.json({ error: 'カテゴリの取得に失敗しました' }, { status: 500 });
   }
 }
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     if (error) throw error;
     return NextResponse.json({ category: data }, { status: 201 });
   } catch (e) {
-    logger.error('POST categories error:', e);
+    logger.error('POST categories error', { error: e });
     return NextResponse.json({ error: 'カテゴリの作成に失敗しました' }, { status: 500 });
   }
 }

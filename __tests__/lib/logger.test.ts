@@ -23,13 +23,18 @@ vi.mock('fs', () => ({
 }));
 
 vi.mock('winston', () => {
-  const fmt = {
-    combine:   vi.fn((...fmts: unknown[]) => fmts),
-    timestamp: vi.fn(() => ({})),
-    colorize:  vi.fn(() => ({})),
-    printf:    vi.fn(() => ({})),
-    json:      vi.fn(() => ({})),
-  };
+  // winston.format は関数かつメソッド群を持つオブジェクト
+  // errorSerializer = winston.format(fn) のような呼び出しに対応するため callable にする
+  const fmt = Object.assign(
+    (_fn: unknown) => () => ({}),  // winston.format(fn)() → formatInstance
+    {
+      combine:   vi.fn((...fmts: unknown[]) => fmts),
+      timestamp: vi.fn(() => ({})),
+      colorize:  vi.fn(() => ({})),
+      printf:    vi.fn(() => ({})),
+      json:      vi.fn(() => ({})),
+    }
+  );
   const shared = {
     transports: { Console: MockConsoleTransport, File: MockFileTransport },
     format: fmt,
@@ -99,6 +104,25 @@ describe('logger (src/lib/logger.ts)', () => {
     it('logs/ ディレクトリが既存の場合は mkdirSync を呼ばない', async () => {
       mockExistsSync.mockReturnValue(true);
       await importLogger();
+      expect(mockMkdirSync).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── テスト環境 ───────────────────────────────────────────────────────────
+
+  describe('テスト環境（NODE_ENV=test）', () => {
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'test');
+    });
+
+    it('FileTransport は使用されない', async () => {
+      await importLogger();
+      expect(MockFileTransport).not.toHaveBeenCalled();
+    });
+
+    it('ファイルシステムにアクセスしない', async () => {
+      await importLogger();
+      expect(mockExistsSync).not.toHaveBeenCalled();
       expect(mockMkdirSync).not.toHaveBeenCalled();
     });
   });

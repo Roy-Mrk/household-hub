@@ -73,7 +73,7 @@ export async function GET(
 
     return NextResponse.json({ data: { ...settlement, split_ratios: enrichedRatios, items: enrichedItems } });
   } catch (e) {
-    logger.error('GET settlement/[id] error:', e);
+    logger.error('GET settlement/[id] error', { error: e });
     return NextResponse.json({ error: 'データ取得に失敗しました' }, { status: 500 });
   }
 }
@@ -124,7 +124,7 @@ export async function PATCH(
 
     return NextResponse.json({ message: 'キャンセルOK' });
   } catch (e) {
-    logger.error('PATCH settlement/[id] error:', e);
+    logger.error('PATCH settlement/[id] error', { error: e });
     return NextResponse.json({ error: 'キャンセルに失敗しました' }, { status: 500 });
   }
 }
