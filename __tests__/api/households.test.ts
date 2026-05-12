@@ -181,11 +181,14 @@ describe('DELETE /api/households', () => {
   });
 
   it('オーナーは世帯を解散できる', async () => {
-    mockFrom
-      .mockImplementationOnce(() =>
-        makeQueryMock({ data: { household_id: HOUSEHOLD_ID, role: 'owner' }, error: null })
-      )
-      .mockImplementationOnce(() => makeQueryMock({ error: null }));
+    // membership 取得: server client
+    mockFrom.mockImplementationOnce(() =>
+      makeQueryMock({ data: { household_id: HOUSEHOLD_ID, role: 'owner' }, error: null })
+    );
+    // households DELETE: admin client（カスケード先のRLSをバイパスするため）
+    vi.mocked(supabaseAdmin.from).mockImplementationOnce(
+      () => makeQueryMock({ error: null }) as never
+    );
 
     const res = await DELETE();
     expect(res.status).toBe(200);

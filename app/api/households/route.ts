@@ -124,8 +124,9 @@ export async function DELETE() {
     if (!membership) return NextResponse.json({ error: '世帯に所属していません' }, { status: 404 });
     if (membership.role !== 'owner') return NextResponse.json({ error: 'オーナーのみ解散できます' }, { status: 403 });
 
-    // households を削除するとカスケードで members/invitations も削除される
-    const { error } = await supabase
+    // supabaseAdmin を使用: カスケード削除時に household_members / settlements 等の
+    // RLS DELETE ポリシーがブロックするため、サービスロールでバイパスする
+    const { error } = await supabaseAdmin
       .from('households')
       .delete()
       .eq('id', membership.household_id);
