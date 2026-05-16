@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { HouseholdCreateSchema, zodErrorToMessages } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 // GET: 自分の世帯情報を取得
 export async function GET() {
@@ -53,7 +54,7 @@ export async function GET() {
       household: { ...household, role: membership.role, members: membersWithName },
     }, { status: 200 });
   } catch (e) {
-    console.error('GET households error:', e);
+    logger.error('GET households error', { error: e });
     return NextResponse.json({ error: 'データ取得に失敗しました' }, { status: 500 });
   }
 }
@@ -103,7 +104,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ household }, { status: 201 });
   } catch (e) {
-    console.error('POST households error:', e);
+    logger.error('POST households error', { error: e });
     return NextResponse.json({ error: '世帯の作成に失敗しました' }, { status: 500 });
   }
 }
@@ -135,7 +136,7 @@ export async function DELETE() {
 
     return NextResponse.json({ message: '世帯を解散しました' }, { status: 200 });
   } catch (e) {
-    console.error('DELETE households error:', e);
+    logger.error('DELETE households error', { error: e });
     return NextResponse.json({ error: '世帯の解散に失敗しました' }, { status: 500 });
   }
 }
