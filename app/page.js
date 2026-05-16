@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { createSupabaseServerClient } from "@/lib/supabaseServerClient";
 import MonthNav from "@/components/MonthNav";
 import CategoryPieChart from "@/components/CategoryPieChart";
+import MonthlyBarChart from "@/components/MonthlyBarChart";
 import { parseMonth, monthToRange } from "@/lib/monthUtils";
 
 function formatAmount(amount) {
@@ -182,6 +183,14 @@ export default async function Home({ searchParams }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
         <CategoryPieChart data={expenseByCategory} title="支出カテゴリ別" />
         <CategoryPieChart data={incomeByCategory} title="収入カテゴリ別" />
+      </div>
+
+      {/* 収支推移グラフ */}
+      <div className="mt-6">
+        <h2 className="text-sm font-semibold text-gray-400 mb-3">収支推移（過去12ヶ月）</h2>
+        <div className="bg-gray-800 rounded-xl p-4">
+          <MonthlyBarChart months={12} />
+        </div>
       </div>
     </div>
   );
