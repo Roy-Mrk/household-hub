@@ -30,12 +30,18 @@ const LEGEND_LABELS: Record<string, string> = {
 export default function MonthlyBarChart({ months = 12 }: { months?: number }) {
   const [data, setData] = useState<MonthlyData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/report/monthly?months=${months}`, { cache: 'no-store' })
-      .then(r => r.json())
+    setLoading(true);
+    setError(false);
+    fetch(`/api/report/monthly?months=${months}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then(j => setData(j.data ?? []))
-      .catch(() => setData([]))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [months]);
 
@@ -43,6 +49,14 @@ export default function MonthlyBarChart({ months = 12 }: { months?: number }) {
     return (
       <div className="h-52 flex items-center justify-center text-gray-500 text-sm">
         読み込み中...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-52 flex items-center justify-center text-red-400 text-sm">
+        データの取得に失敗しました
       </div>
     );
   }

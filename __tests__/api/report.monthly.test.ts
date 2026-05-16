@@ -101,6 +101,15 @@ describe('GET /api/report/monthly', () => {
     expect(body.data).toHaveLength(1);
   });
 
+  it('months に非数値が渡された場合はデフォルト 12 を使う', async () => {
+    makeIncomeExpenseMocks([], []);
+    const req = new NextRequest('http://localhost/api/report/monthly?months=abc');
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data).toHaveLength(12);
+  });
+
   it('最新月が現在月（2026-05）である', async () => {
     makeIncomeExpenseMocks([], []);
     const req = new NextRequest('http://localhost/api/report/monthly?months=3');

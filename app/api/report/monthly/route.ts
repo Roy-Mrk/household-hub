@@ -8,11 +8,13 @@ export async function GET(req: NextRequest) {
   if (auth.errorResponse) return auth.errorResponse;
   const { supabase } = auth;
 
-  const months = Math.min(24, Math.max(1, Number(new URL(req.url).searchParams.get('months') ?? 12)));
+  const raw = Number(new URL(req.url).searchParams.get('months') ?? 12);
+  const months = Math.min(24, Math.max(1, isNaN(raw) ? 12 : raw));
 
   const now = new Date();
   const from = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
-  const fromDate = from.toISOString().slice(0, 10);
+  // toISOString() は UTC 変換するためタイムゾーン依存で日付がずれる。文字列で組み立てる
+  const fromDate = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-01`;
 
   try {
     const [incomeRes, expenseRes] = await Promise.all([
