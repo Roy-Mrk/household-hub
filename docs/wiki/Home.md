@@ -25,6 +25,14 @@ household-hub は家庭の収支（収入・支出）を管理するウェブア
 | グラフ | Recharts |
 | ロギング | Winston |
 
+## Wiki 管理方法
+
+このWikiは `docs/wiki/` ディレクトリで管理されています。
+`main` ブランチに `.md` ファイルをpushすると、GitHub Actions が自動的にこのWikiへ同期します。
+
+- 新しいページを追加したい場合は `docs/wiki/ページ名.md` を作成してください
+- ページ名がそのままWikiのページ名になります
+
 ## ドキュメント目次
 
 | ページ | 内容 |
