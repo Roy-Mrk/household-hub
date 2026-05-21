@@ -23,6 +23,7 @@ export function makeQueryMock(result: object) {
   q.range = vi.fn(() => Promise.resolve(result));
   q.eq = vi.fn(chain);
   q.neq = vi.fn(chain);
+  q.is = vi.fn(chain);
   q.in = vi.fn(chain);
   q.maybeSingle = vi.fn(() => Promise.resolve(result));
   q.single = vi.fn(() => Promise.resolve(result));
