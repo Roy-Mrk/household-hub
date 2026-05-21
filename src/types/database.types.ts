@@ -98,6 +98,63 @@ export type Database = {
           }
         ]
       }
+      recurring_entries: {
+        Row: {
+          id: number
+          user_id: string
+          household_id: string | null
+          type: string
+          source: string
+          amount: number
+          subcategory_id: string | null
+          owner: string
+          needs_settlement: boolean
+          frequency: string
+          day_of_month: number
+          month_of_year: number | null
+          next_apply_date: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          household_id?: string | null
+          type: string
+          source: string
+          amount: number
+          subcategory_id?: string | null
+          owner?: string
+          needs_settlement?: boolean
+          frequency: string
+          day_of_month: number
+          month_of_year?: number | null
+          next_apply_date: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          household_id?: string | null
+          type?: string
+          source?: string
+          amount?: number
+          subcategory_id?: string | null
+          owner?: string
+          needs_settlement?: boolean
+          frequency?: string
+          day_of_month?: number
+          month_of_year?: number | null
+          next_apply_date?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       household_invitations: {
         Row: {
           created_at: string

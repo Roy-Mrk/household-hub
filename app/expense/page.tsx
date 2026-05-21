@@ -61,7 +61,10 @@ export default function ExpensePage() {
   };
 
   useEffect(() => {
-    void load();
+    // 繰り返しエントリを適用してからデータを取得
+    fetch('/api/recurring/apply', { method: 'POST' })
+      .then(() => load())
+      .catch(() => load());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, month, offset]);
 

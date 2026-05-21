@@ -129,6 +129,16 @@ export default async function Home({ searchParams }) {
           </div>
         </Link>
         <Link
+          href="/recurring"
+          className="bg-gray-800 rounded-xl p-4 flex items-center gap-3 hover:bg-gray-700 transition-colors"
+        >
+          <span className="text-2xl">🔁</span>
+          <div>
+            <p className="font-semibold">繰り返し</p>
+            <p className="text-xs text-gray-400">定期収支を自動登録</p>
+          </div>
+        </Link>
+        <Link
           href="/settings"
           className="bg-gray-800 rounded-xl p-4 flex items-center gap-3 hover:bg-gray-700 transition-colors"
         >
