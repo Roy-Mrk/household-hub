@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import type { User } from '@supabase/supabase-js';
@@ -92,6 +93,13 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
               <p className="text-xs text-gray-400 truncate">{user.email}</p>
             </div>
             <div className="py-1">
+              <Link
+                href="/settings"
+                onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors"
+              >
+                設定
+              </Link>
               <button
                 onClick={() => { setModalOpen(true); setMenuOpen(false); }}
                 className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors"
